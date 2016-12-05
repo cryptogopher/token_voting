@@ -1,3 +1,5 @@
+require_dependency 'bitcoin_votes_hook_listener.rb'
+
 Redmine::Plugin.register :bitcoin_voting do
   name 'Bitcoin Voting plugin'
   author 'Piotr Michalczyk'
