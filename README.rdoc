@@ -1,3 +1,9 @@
 = bitcoin_voting
 
-Description goes here
+Redmine plugin for voting on issues by making BTC deposits.
+
+Developing for:
+  Redmine version                3.2.1.stable
+  Ruby version                   2.1.7-p400
+  Rails version                  4.2.7.1
+
