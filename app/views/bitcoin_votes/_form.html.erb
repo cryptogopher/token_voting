@@ -2,7 +2,8 @@
 
 <p>
 <% time_now = Time.now %>
-<%= f.select :expiration, options_for_select(BitcoinVote::EXPIRATION_PERIODS.map{ |k,v| [k, time_now+v]}, time_now+BitcoinVote::EXPIRATION_PERIODS["month"]) %>
+<%= f.label :expire_in, "Expire in:" %>
+<%= f.select :expiration, options_for_select(BitcoinVote::EXPIRATION_PERIODS.map{ |k,v| [k, time_now+v]}, time_now+BitcoinVote::EXPIRATION_PERIODS["1 month"]) %>
 <%= submit_tag l(:button_add) %>
 <%= link_to_function l(:button_cancel), '$("#new-bitcoin-vote-form").hide();'%>
 </p>
