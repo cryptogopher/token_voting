@@ -1,6 +1,6 @@
-= bitcoin_voting
+= token-voting
 
-Redmine plugin for voting on issues by making BTC deposits.
+Redmine plugin for voting on issues by making crypto token deposits.
 
 Developing for:
   Redmine version                3.2.1.stable
