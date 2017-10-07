@@ -1,0 +1,10 @@
+<%= error_messages_for 'token_vote' %>
+
+<p>
+<% time_now = Time.now %>
+<%= f.label :expire_in, "Expire in:" %>
+<%= f.select :expiration, options_for_select(TokenVote::EXPIRATION_PERIODS.map{ |k,v| [k, time_now+v]}, time_now+TokenVote::EXPIRATION_PERIODS["1 month"]) %>
+<%= submit_tag l(:button_add) %>
+<%= link_to_function l(:button_cancel), '$("#new-token-vote-form").hide();'%>
+</p>
+

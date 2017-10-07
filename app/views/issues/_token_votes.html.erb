@@ -2,13 +2,13 @@
 <div class="contextual">
   <%# if User.current.allowed_to?(:manage_issue_relations, @project) %>
   <% if User.current.login != "" %>
-  <%= toggle_link l(:button_add), 'new-bitcoin-vote-form' %>
+  <%= toggle_link l(:button_add), 'new-token-vote-form' %>
   <% end %>
 </div>
 
-<p><strong><%=l(:label_bitcoin_votes)%></strong></p>
+<p><strong><%=l(:label_token_votes)%></strong></p>
 
-<% if @bitcoin_votes.present? %>
+<% if @token_votes.present? %>
   <form>
     <table class="list issues">
       <% @relations.each do |relation| %>
@@ -33,13 +33,13 @@
   </form>
 <% end %>
 
-<% @new_vote = BitcoinVote.new(:issue => @issue, :user => nil) %>
+<% @new_vote = TokenVote.new(:issue => @issue, :user => nil) %>
 <%= form_for @new_vote, {
   :remote => true,
-  :url => bitcoin_votes_path(@new_vote),
+  :url => token_votes_path(@new_vote),
   :method => :get,
-  :html => {:id => 'new-bitcoin-vote-form', :style => 'display: none;'}
+  :html => {:id => 'new-token-vote-form', :style => 'display: none;'}
 } do |f| %>
-<%= render :partial => 'bitcoin_votes/form', :locals => {:f => f}%>
+<%= render :partial => 'token_votes/form', :locals => {:f => f}%>
 <% end %>
 

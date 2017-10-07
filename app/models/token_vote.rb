@@ -1,4 +1,4 @@
-class BitcoinVote < ActiveRecord::Base
+class TokenVote < ActiveRecord::Base
   unloadable
 
   belongs_to :issue
