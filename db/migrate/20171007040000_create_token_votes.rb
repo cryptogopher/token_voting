@@ -9,7 +9,7 @@ class CreateTokenVotes < ActiveRecord::Migration
       t.string :refund_address
       t.string :refund_txid
 
-      t.timestamps
+      t.timestamps null: false
     end
   end
 end
