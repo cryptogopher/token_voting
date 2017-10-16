@@ -1,12 +1,10 @@
 <hr>
+
 <div class="contextual">
-  <%# if User.current.allowed_to?(:manage_issue_relations, @project) %>
-  <% if User.current.login != "" %>
-  <%= toggle_link l(:button_add), 'new-token-vote-form' %>
-  <% end %>
+  <%= toggle_link l(:button_add), 'new-token-vote-form', focus: 'token_vote_expiration' %>
 </div>
 
-<p><strong><%=l(:label_token_votes)%></strong></p>
+<p><strong><%= l :label_token_votes %></strong></p>
 
 <% if @token_votes.present? %>
   <form>
@@ -33,13 +31,12 @@
   </form>
 <% end %>
 
-<% @new_vote = TokenVote.new(:issue => @issue, :user => nil) %>
-<%= form_for @new_vote, {
-  :remote => true,
-  :url => token_votes_path(@new_vote),
-  :method => :get,
-  :html => {:id => 'new-token-vote-form', :style => 'display: none;'}
-} do |f| %>
-<%= render :partial => 'token_votes/form', :locals => {:f => f}%>
+<% @new_vote = TokenVote.new issue: @issue, user: nil %>
+<%= form_for @new_vote,
+  remote: true,
+  url: token_votes_path(@new_vote),
+  method: :get,
+  html: {:id => 'new-token-vote-form', :style => 'display: none;'} do |f| %>
+  <%= render :partial => 'token_votes/form', :locals => {f: f}%>
 <% end %>
 

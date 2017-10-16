@@ -1,10 +1,11 @@
 <%= error_messages_for 'token_vote' %>
 
 <p>
-<% time_now = Time.now %>
-<%= f.label :expire_in, "Expire in:" %>
-<%= f.select :expiration, options_for_select(TokenVote::EXPIRATION_PERIODS.map{ |k,v| [k, time_now+v]}, time_now+TokenVote::EXPIRATION_PERIODS["1 month"]) %>
+<%= f.label :token, "Token:" %>
+<%= f.select :token, token_vote_token_options %>
+<%= f.label :duration, "Expire in:" %>
+<%= f.select :duration, token_vote_duration_options %>
 <%= submit_tag l(:button_add) %>
-<%= link_to_function l(:button_cancel), '$("#new-token-vote-form").hide();'%>
+<%= link_to_function l(:button_cancel), '$("#new-token-vote-form").hide();' %>
 </p>
 

@@ -1,4 +1,7 @@
-require_dependency 'token_votes_hook_listener.rb'
+require_dependency 'token_votes_hook_listener'
+require_dependency 'issues_helper_patch'
+
+#ActionView::Base.send(:include, TokenVoteHelper)
 
 Redmine::Plugin.register :token_voting do
   name 'Token voting plugin'
