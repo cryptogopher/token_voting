@@ -4,24 +4,41 @@ class TokenVote < ActiveRecord::Base
   belongs_to :issue
   belongs_to :user
 
-  DURATIONS = {
+  after_initialize :set_defaults
+
+  Durations = {
     "1 week" => 1.week,
     "1 month" => 1.month,
     "3 months" => 3.months,
     "6 months" => 6.months,
     "1 year" => 1.year,
   }.freeze
-  DEFAULT_DURATION = 1.month
 
-  TOKENS = [
-    "BTC",
-    "BCH"
-  ].freeze
-  DEFAULT_TOKEN = "BTC"
+  enum token: [:BTC, :BCH]
+  enum status: [:requested, :unconfirmed, :confirmed, :resolved, :expired, :refunded]
 
-  def initialize(args)
-    super
-    @issue, @user = args[:issue], args[:user]
-    @expiration = Time.now + 3.months
+  def duration=(value)
+    super(value.to_i)
+    self[:expiration] = Time.current + self[:duration]
   end
+
+  def deletable?
+    self.requested?
+  end
+
+  protected
+
+  def set_defaults
+    if new_record?
+      self.duration ||= 1.month
+      self.token ||= :BCH
+      self.amount ||= 0
+      self.status ||= :requested
+    end
+  end
+
+  private
+
+  attr_writer :expiration
 end
+

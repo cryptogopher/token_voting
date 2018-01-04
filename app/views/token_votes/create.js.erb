@@ -1,0 +1,6 @@
+$('#token_votes-table').html('<%= j(render :partial => 'issues/token_votes') %>');
+<% if @token_vote.errors.empty? %>
+  $('#token_vote_token').focus();
+  $('#token_votes-table').show();
+<% end %>
+$('#new-token-vote-form').show();

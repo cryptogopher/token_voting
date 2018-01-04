@@ -9,7 +9,7 @@ class CreateTokenVotes < ActiveRecord::Migration
       t.string :txid
       t.string :refund_address
       t.string :refund_txid
-      t.string :token
+      t.integer :token
       t.decimal :amount, precision: 20, scale: 10
 
       t.timestamps null: false

@@ -1,42 +1,21 @@
-<hr>
-
-<div class="contextual">
-  <%= toggle_link l(:button_add), 'new-token-vote-form', focus: 'token_vote_expiration' %>
-</div>
-
-<p><strong><%= l :label_token_votes %></strong></p>
-
-<% if @token_votes.present? %>
-  <form>
-    <table class="list issues">
-      <% @relations.each do |relation| %>
-        <% other_issue = relation.other_issue(@issue) -%>
-        <tr class="issue hascontextmenu" id="relation-<%= relation.id %>">
-          <td class="checkbox"><%= check_box_tag("ids[]", other_issue.id, false, :id => nil) %></td>
-          <td class="subject" style="width: 50%">
-            <%= relation.to_s(@issue) {|other| link_to_issue(other, :project => Setting.cross_project_issue_relations?)}.html_safe %>
+<% if @issue.token_votes.present? %>
+    <table id='token_votes-table' class="list">
+      <% @issue.token_votes.each do |token_vote| %>
+        <tr id="token_vote-<%= token_vote.id %>">
+          <td class="token"><%= token_vote.token %></td>
+          <td class="address" style="width: 50%"><%= token_vote.address %></td>
+          <td class="expiration"><%= format_date(token_vote.expiration) %></td>
+          <td class="amount"><%= token_vote.amount %></td>
+          <td class="amount"><%= token_vote.deletable? %></td>
+          <td class="buttons">
+            <% if token_vote.deletable? %>
+              <%= link_to_if_authorized image_tag('link_break.png'),
+                {controller: 'token_votes', action: 'destroy', id: token_vote},
+                {method: :delete, remote: true} %>
+            <% end %>
           </td>
-          <td class="status"><%= other_issue.status.name %></td>
-          <td class="start_date"><%= format_date(other_issue.start_date) %></td>
-          <td class="due_date"><%= format_date(other_issue.due_date) %></td>
-          <td class="buttons"><%= link_to image_tag('link_break.png'),
-            relation_path(relation),
-            :remote => true,
-            :method => :delete,
-            :data => {:confirm => l(:text_are_you_sure)},
-            :title => l(:label_relation_delete) if User.current.allowed_to?(:manage_issue_relations, @project) %></td>
         </tr>
       <% end %>
     </table>
-  </form>
-<% end %>
-
-<% @new_vote = TokenVote.new issue: @issue, user: nil %>
-<%= form_for @new_vote,
-  remote: true,
-  url: token_votes_path(@new_vote),
-  method: :get,
-  html: {:id => 'new-token-vote-form', :style => 'display: none;'} do |f| %>
-  <%= render :partial => 'token_votes/form', :locals => {f: f}%>
 <% end %>
 

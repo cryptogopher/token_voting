@@ -1,0 +1,17 @@
+<hr/>
+<div id="token_votes">
+  <div class="contextual">
+    <%= toggle_link l(:button_add), 'new-token-vote-form', focus: 'token_vote_expiration' %>
+  </div>
+
+  <p>
+    <strong>
+      <%= l :label_token_votes %>
+    </strong>
+  </p>
+
+  <%= render partial: 'issues/token_votes' %>
+
+  <%= render partial: 'token_votes/form' %>
+</div>
+

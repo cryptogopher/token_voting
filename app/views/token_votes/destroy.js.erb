@@ -1,0 +1,4 @@
+$('#token_vote-<%= @token_vote.id %>').remove();
+if ( $('#token_votes-table tr').length == 0 ) {
+  $('#token_votes-table').hide();
+}

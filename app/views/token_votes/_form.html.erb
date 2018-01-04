@@ -1,11 +1,19 @@
-<%= error_messages_for 'token_vote' %>
+<%= form_for TokenVote.new, remote: true,
+  url: issue_token_votes_path(@issue),
+  html: {id: 'new-token-vote-form', style: 'display: none;'} do |f| %>
 
-<p>
-<%= f.label :token, "Token:" %>
-<%= f.select :token, token_vote_token_options %>
-<%= f.label :duration, "Expire in:" %>
-<%= f.select :duration, token_vote_duration_options %>
-<%= submit_tag l(:button_add) %>
-<%= link_to_function l(:button_cancel), '$("#new-token-vote-form").hide();' %>
-</p>
+  <%= error_messages_for 'token_vote' %>
+
+  <p>
+  <%= f.label :token, "Token:" %>
+  <%= f.select :token, TokenVote.tokens.keys %>
+
+  <%= f.label :duration, "Expire in:" %>
+  <%= f.select :duration, TokenVote::Durations %>
+
+  <%= submit_tag l(:button_activate) %>
+  <%= link_to_function l(:button_cancel), '$("#new-token-vote-form").hide();' %>
+  </p>
+
+<% end %>
 
