@@ -22,8 +22,14 @@ class TokenVote < ActiveRecord::Base
     self[:expiration] = Time.current + self[:duration]
   end
 
+  def visible?
+    self.issue.visible? &&
+      self.user == User.current &&
+      User.current.allowed_to?(:manage_token_votes, self.issue.project)
+  end
+
   def deletable?
-    self.requested?
+    self.visible? && self.requested?
   end
 
   protected

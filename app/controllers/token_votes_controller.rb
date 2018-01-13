@@ -2,7 +2,7 @@ class TokenVotesController < ApplicationController
   unloadable
 
   before_filter :find_issue, :authorize, :only => [:create]
-  before_filter :find_token_vote, :only => [:destroy]
+  before_filter :find_token_vote, :authorize, :only => [:destroy]
 
   def create
     @token_vote = TokenVote.new(token_vote_params)
@@ -19,11 +19,12 @@ class TokenVotesController < ApplicationController
 
   def destroy
     raise Unauthorized unless @token_vote.deletable?
+    @issue = @token_vote.issue
     @token_vote.destroy
 
     respond_to do |format|
-      format.html { redirect_to issue_path(@token_vote.issue) }
-      format.js
+      format.html { redirect_to issue_path(@issue) }
+      format.js { @issue.token_votes.reload }
     end
   end
 
@@ -41,6 +42,7 @@ class TokenVotesController < ApplicationController
 
   def find_token_vote
     @token_vote = TokenVote.find(params[:id])
+    @project = @token_vote.issue.project
   rescue ActiveRecord::RecordNotFound
     render_404
   end

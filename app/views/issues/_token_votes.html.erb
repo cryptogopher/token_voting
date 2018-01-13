@@ -1,12 +1,12 @@
 <% if @issue.token_votes.present? %>
-    <table id='token_votes-table' class="list">
-      <% @issue.token_votes.each do |token_vote| %>
+  <table class="list">
+    <% @issue.token_votes.each do |token_vote| %>
+      <% if token_vote.visible? %>
         <tr id="token_vote-<%= token_vote.id %>">
           <td class="token"><%= token_vote.token %></td>
           <td class="address" style="width: 50%"><%= token_vote.address %></td>
           <td class="expiration"><%= format_date(token_vote.expiration) %></td>
           <td class="amount"><%= token_vote.amount %></td>
-          <td class="amount"><%= token_vote.deletable? %></td>
           <td class="buttons">
             <% if token_vote.deletable? %>
               <%= link_to_if_authorized image_tag('link_break.png'),
@@ -16,6 +16,6 @@
           </td>
         </tr>
       <% end %>
-    </table>
+    <% end %>
+  </table>
 <% end %>
-
