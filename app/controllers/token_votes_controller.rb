@@ -6,14 +6,15 @@ class TokenVotesController < ApplicationController
 
   def create
     @token_vote = TokenVote.new(token_vote_params)
-    print token_vote_params
     @token_vote.user = User.current
     @token_vote.issue = @issue
     @token_vote.save
 
     respond_to do |format|
       format.html { redirect_to issue_path(@issue) }
-      format.js { @issue.token_votes.reload }
+      format.js {
+        @token_votes = @issue.reload.token_votes.select {|tv| tv.visible?}
+      }
     end
   end
 
@@ -24,7 +25,9 @@ class TokenVotesController < ApplicationController
 
     respond_to do |format|
       format.html { redirect_to issue_path(@issue) }
-      format.js { @issue.token_votes.reload }
+      format.js {
+        @token_votes = @issue.reload.token_votes.select {|tv| tv.visible?}
+      }
     end
   end
 

@@ -1,21 +1,27 @@
-<% if @issue.token_votes.present? %>
+<% if @token_votes.present? %>
+  <p><%= l :label_your_votes %></p>
   <table class="list">
-    <% @issue.token_votes.each do |token_vote| %>
-      <% if token_vote.visible? %>
-        <tr id="token_vote-<%= token_vote.id %>">
-          <td class="token"><%= token_vote.token %></td>
-          <td class="address" style="width: 50%"><%= token_vote.address %></td>
-          <td class="expiration"><%= format_date(token_vote.expiration) %></td>
-          <td class="amount"><%= token_vote.amount %></td>
-          <td class="buttons">
-            <% if token_vote.deletable? %>
-              <%= link_to_if_authorized image_tag('link_break.png'),
-                {controller: 'token_votes', action: 'destroy', id: token_vote},
-                {method: :delete, remote: true} %>
-            <% end %>
-          </td>
-        </tr>
-      <% end %>
+    <tr>
+      <th class="token">Token</th>
+      <th class="address" style="width: 50%">Address</th>
+      <th class="expiration">Expiration</th>
+      <th class="amount">Amount</th>
+      <th class="buttons">Delete</th>
+    </tr>
+    <% @token_votes.each do |token_vote| %>
+      <tr id="token_vote-<%= token_vote.id %>">
+        <td class="token"><%= token_vote.token %></td>
+        <td class="address" style="width: 50%"><%= token_vote.address %></td>
+        <td class="expiration"><%= format_date(token_vote.expiration) %></td>
+        <td class="amount"><%= token_vote.amount %></td>
+        <td class="buttons">
+          <% if token_vote.deletable? %>
+            <%= link_to image_tag('link_break.png'),
+              {controller: 'token_votes', action: 'destroy', id: token_vote},
+              {method: :delete, remote: true} %>
+          <% end %>
+        </td>
+      </tr>
     <% end %>
   </table>
 <% end %>

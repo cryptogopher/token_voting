@@ -1,14 +1,33 @@
 <hr/>
 <div id="token_votes">
   <div class="contextual">
-    <%= toggle_link l(:button_add), 'new-token-vote-form', focus: 'token_vote_expiration' %>
+    <% if User.current.allowed_to?(:manage_token_votes, @project) %>
+      <%= toggle_link l(:button_add), 'new-token-vote-form', focus: 'token_vote_duration' %>
+    <% end %>
   </div>
 
   <p>
-    <strong>
-      <%= l :label_token_votes %>
-    </strong>
+    <strong><%= l :label_token_votes %></strong>
   </p>
+
+  <% if @token_vote_stats.any? %>
+    <table class="list">
+      <tr>
+        <th class="token">Token</th>
+        <% TokenVote::STAT_PERIODS.keys.each do |period| %>
+          <th class="amount"><%= period %></th>
+        <% end %>
+      </tr>
+      <% @token_vote_stats.each do |token, stats| %>
+        <tr>
+          <td class="token"><%= token %></td>
+          <% stats.sort.each do |period, amount| %>
+            <td class="amount"><%= amount %></td>
+          <% end %>
+        </tr>
+      <% end %>
+    </table>
+  <% end %>
 
   <div id="token_votes-table">
     <%= render partial: 'issues/token_votes' %>

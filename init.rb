@@ -1,5 +1,6 @@
 require_dependency 'token_votes_hook_listener'
 require_dependency 'issue_patch'
+require_dependency 'issues_controller_patch'
 require_dependency 'issues_helper_patch'
 
 Redmine::Plugin.register :token_voting do
