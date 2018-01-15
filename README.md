@@ -14,7 +14,7 @@ Rails version                  4.2.7.1
 0. To use this plugin you need to have Redmine (https://www.redmine.org) installed. If you don't - it is of no use.
 
 1. Check that your Redmine version is compatible with plugin. Currently supported versions of Redmine:
-- 3.2
+   - 3.2
 
 2. Copy plugin to your plugin directory:
 ```
@@ -27,4 +27,4 @@ git clone https://github.com/cryptogopher/token_voting
 4. Setup plugin settings (https://your.redmine.com/settings/plugin/token_voting)
 
 5. Enable _Manage token votes_ permissions (https://your.redmine.com/roles/permissions)
-- it is under _Issue tracking_
+   - it is under _Issue tracking_
