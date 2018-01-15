@@ -1,9 +1,9 @@
 module IssuesControllerPatch
   IssuesController.class_eval do
-    before_filter :find_token_votes, :only => [:show]
+    before_filter :prepare_token_votes, :only => [:show]
 
     private
-    def find_token_votes
+    def prepare_token_votes
       @token_votes = @issue.token_votes.select {|tv| tv.visible?}
       @token_vote = TokenVote.new
 
@@ -22,7 +22,6 @@ module IssuesControllerPatch
           total_stats[token_name][period] = amount if amount > 0.0
         end
       end
-      puts total_stats
       @token_vote_stats = total_stats
     end
   end
