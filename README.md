@@ -17,10 +17,10 @@ Rails version                  4.2.7.1
    - 3.2
 
 2. Copy plugin to your plugin directory:
-```
-cd /your/redmine/directory/plugins/
-git clone https://github.com/cryptogopher/token_voting
-```
+   ```
+   cd /your/redmine/directory/plugins/
+   git clone https://github.com/cryptogopher/token_voting
+   ```
 
 3. Restart Redmine. Exact steps depend on your installation of Redmine. You may need to restart Apache (if using Passenger) or just Redmine daemon.
 
