@@ -16,13 +16,9 @@ Redmine::Plugin.register :token_voting do
   end
 
   settings default: {
-    BTC: {
-      master_pk: 'xyz',
-      confirmations: 6,
-    },
-    BCH: {
-      master_pk: 'abc',
-      confirmations: 2,
-    },
+    btc_rpc_url: 'http://localhost/rpc',
+    btc_confirmations: 6,
+    bch_rpc_url: 'http://localhost/rpc',
+    bch_confirmations: 6,
   }, partial: 'token_votes/settings'
 end

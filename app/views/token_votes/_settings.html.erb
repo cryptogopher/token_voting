@@ -1,27 +1,29 @@
 <p>
-  <%= label_tag :settings_BTC, 'BTC' %>
+<%= label_tag :settings_btc, 'BTC' %>
 </p>
 <p>
-  <%= label_tag :settings_BTC_master_pk, 'Master Public Key' %>
-  <%= text_field_tag 'settings[BTC][master_pk]',
-    @settings[:BTC][:master_pk], size: 80 %>
+  <%= label_tag :settings_btc_rpc_url, 'RPC URL' %>
+  <%= text_field_tag 'settings[btc_rpc_url]',
+    @settings[:btc_rpc_url], size: 64 %>
+  <em class="info"><%= l(:label_example) %>: http://example/rpc</em>
 </p>
 <p>
-  <%= label_tag :settings_BTC_confirmations, 'Confirmations' %>
-  <%= text_field_tag 'settings[BTC][confirmations]',
-    @settings[:BTC][:confirmations], size: 3 %>
+  <%= label_tag :settings_btc_confirmations, 'Confirmations' %>
+  <%= text_field_tag 'settings[btc_confirmations]',
+    @settings[:btc_confirmations], size: 2 %>
 </p>
-
+<hr/>
 <p>
-  <%= label_tag :settings_BCH, 'BCH' %>
-</p>
-<p>
-  <%= label_tag :settings_BCH_master_pk, 'Master Public Key' %>
-  <%= text_field_tag 'settings[BCH][master_pk]',
-    @settings[:BCH][:master_pk], size: 80 %>
+  <%= label_tag :settings_bch, 'BCH' %>
 </p>
 <p>
-  <%= label_tag :settings_BCH_confirmations, 'Confirmations' %>
-  <%= text_field_tag 'settings[BCH][confirmations]',
-    @settings[:BCH][:confirmations], size: 3 %>
+  <%= label_tag :settings_bch_rpc_url, 'RPC URL' %>
+  <%= text_field_tag 'settings[bch_rpc_url]',
+    @settings[:bch_rpc_url], size: 64 %>
+  <em class="info"><%= l(:label_example) %>: http://example/rpc</em>
+</p>
+<p>
+  <%= label_tag :settings_bch_confirmations, 'Confirmations' %>
+  <%= text_field_tag 'settings[bch_confirmations]',
+    @settings[:bch_confirmations], size: 2 %>
 </p>
