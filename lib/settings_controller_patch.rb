@@ -4,17 +4,29 @@ module SettingsControllerPatch
 
     private
     def token_voting_settings
-      @plugin = Redmine::Plugin.find(params[:id])
-      return unless @plugin.name == 'token_voting'
+      # validate settings on POST, before saving
+      return unless request.post? && params[:id] == 'token_voting'
 
-      if request.post?
-        # validate settings before sending
-      else
-        # set defaults if not configured
-        if Setting.plugin_token_voting.empty?
-          Setting.plugin_token_voting = @plugin.settings[:default]
-        end
+      begin
+        uri = params[:settings][:btc_rpc_url]
+        rpc = RPC::Bitcoin.new(uri)
+        uri = rpc.uri.to_s
+        rpc.uptime
+
+        uri = params[:settings][:bch_rpc_url]
+        rpc = RPC::Bitcoin.new(uri)
+        uri = rpc.uri.to_s
+        rpc.uptime
+      rescue RPC::Error, URI::Error => e
+        flash[:error] = "Cannot connect to #{uri}: #{e.message}"
+
+        @plugin = Redmine::Plugin.find(params[:id])
+        @settings = params[:settings]
+        @partial = @plugin.settings[:partial]
+        render
       end
+    rescue Redmine::PluginNotFound
+      render_404
     end
   end
 end

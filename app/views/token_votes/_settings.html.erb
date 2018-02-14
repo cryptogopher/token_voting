@@ -10,11 +10,13 @@
 </p>
 <p>
   <%= label_tag :settings_btc_confirmations, 'Confirmations' %>
-  <%= text_field_tag 'settings[btc_confirmations]', @settings[:btc_confirmations], size: 2 %>
+  <%= number_field_tag 'settings[btc_confirmations]', @settings[:btc_confirmations],
+    min: 0, size: 2 %>
   <em class="info">
     <%= l(:label_default) %>: <%= @plugin.settings[:default][:btc_confirmations] %>
   </em>
 </p>
+
 <hr/>
 <p>
   <%= label_tag :settings_bch, 'BCH' %>
@@ -28,7 +30,8 @@
 </p>
 <p>
   <%= label_tag :settings_bch_confirmations, 'Confirmations' %>
-  <%= text_field_tag 'settings[bch_confirmations]', @settings[:bch_confirmations], size: 2 %>
+  <%= number_field_tag 'settings[bch_confirmations]', @settings[:bch_confirmations],
+    min: 0, size: 2 %>
   <em class="info">
     <%= l(:label_default) %>: <%= @plugin.settings[:default][:bch_confirmations] %>
   </em>
