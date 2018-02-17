@@ -43,6 +43,22 @@ class TokenVote < ActiveRecord::Base
     self.visible? && self.requested?
   end
 
+  def self.compute_stats(token_votes)
+    total_stats = Hash.new{|hash, key| hash[key] = Hash.new}
+    STAT_PERIODS.values.each do |period|
+      # Get guaranteed amount per token in given period
+      stats = token_votes.
+        where('expiration > ?', Time.current + period).
+        group(:token).
+        sum(:amount)
+      stats.each do |token_index, amount|
+        token_name = self.tokens.key(token_index)
+        total_stats[token_name][period] = amount if amount > 0.0
+      end
+    end
+    return total_stats
+  end
+
   protected
 
   def set_defaults

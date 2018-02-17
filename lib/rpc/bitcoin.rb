@@ -45,3 +45,4 @@ module RPC
 
   class Error < RuntimeError; end
 end
+
