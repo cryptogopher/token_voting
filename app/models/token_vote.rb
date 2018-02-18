@@ -25,8 +25,16 @@ class TokenVote < ActiveRecord::Base
   }
 
   TOKENS ={
-    BTC: {rpc_class: RPC::Bitcoin, rpc_uri: Setting.plugin_token_voting[:btc_rpc_url]},
-    BCH: {rpc_class: RPC::Bitcoin, rpc_uri: Setting.plugin_token_voting[:bch_rpc_url]},
+    BTC: {
+      rpc_class: RPC::Bitcoin,
+      rpc_uri: Setting.plugin_token_voting[:btc_rpc_uri],
+      min_conf: Setting.plugin_token_voting[:btc_confirmations],
+    },
+    BCH: {
+      rpc_class: RPC::Bitcoin,
+      rpc_uri: Setting.plugin_token_voting[:bch_rpc_uri]
+      min_conf: Setting.plugin_token_voting[:bch_confirmations],
+    },
   }
   enum token: TOKENS.keys
 
@@ -48,15 +56,21 @@ class TokenVote < ActiveRecord::Base
   end
 
   def generate_address
-    token_def = TOKENS[self.token.to_sym]
-    rpc = token_def[:rpc_class].new(token_def[:rpc_uri])
-
+    rpc = self.get_rpc
     # Is there more efficient way to generate unique addressess using RPC?
+    # (under all circumstances, including removing wallet file from RPC daemon)
     begin
       addr = rpc.getnewaddress
     end while TokenVote.exists?(address: addr)
 
     self[:address] = addr
+  end
+
+  def update_received_amount
+    rpc = self.get_rpc
+    minimum_conf = TOKENS[self.token.to_sym][:min_conf]
+    self.amount_unconf = rpc.getreceivedbyaddress(address: self.address, minconf: 0)
+    self.amount_conf = rpc.getreceivedbyaddress(address: self.address, minconf: minimum_conf)
   end
 
   def self.compute_stats(token_votes)
@@ -76,6 +90,11 @@ class TokenVote < ActiveRecord::Base
   end
 
   protected
+
+  def get_rpc
+    token_def = TOKENS[self.token.to_sym]
+    token_def[:rpc_class].new token_def[:rpc_uri]
+  end
 
   def set_defaults
     if new_record?

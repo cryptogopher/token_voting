@@ -6,8 +6,8 @@ module RPC
   class Bitcoin
     attr_reader :uri
 
-    def initialize(service_url)
-      @uri = URI.parse(URI.escape(service_url))
+    def initialize(service_uri)
+      @uri = URI.parse(URI.escape(service_uri))
       unless @uri && @uri.kind_of?(URI::HTTP) && @uri.request_uri
         raise Error, 'non HTTP/HTTPS URI provided'
       end

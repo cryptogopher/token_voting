@@ -2,16 +2,16 @@
 <%= label_tag :settings_btc, 'BTC' %>
 </p>
 <p>
-  <%= label_tag :settings_btc_rpc_url, 'RPC URL' %>
-  <%= text_field_tag 'settings[btc_rpc_url]', @settings[:btc_rpc_url], size: 64 %>
+  <%= label_tag :settings_btc_rpc_uri, 'RPC URI' %>
+  <%= text_field_tag 'settings[btc_rpc_uri]', @settings[:btc_rpc_uri], size: 64 %>
   <em class="info">
-    <%= l(:label_default) %>: <%= @plugin.settings[:default][:btc_rpc_url] %>
+    <%= l(:label_default) %>: <%= @plugin.settings[:default][:btc_rpc_uri] %>
   </em>
 </p>
 <p>
   <%= label_tag :settings_btc_confirmations, 'Confirmations' %>
   <%= number_field_tag 'settings[btc_confirmations]', @settings[:btc_confirmations],
-    min: 0, size: 2 %>
+    min: 1, size: 2 %>
   <em class="info">
     <%= l(:label_default) %>: <%= @plugin.settings[:default][:btc_confirmations] %>
   </em>
@@ -22,16 +22,16 @@
   <%= label_tag :settings_bch, 'BCH' %>
 </p>
 <p>
-  <%= label_tag :settings_bch_rpc_url, 'RPC URL' %>
-  <%= text_field_tag 'settings[bch_rpc_url]', @settings[:bch_rpc_url], size: 64 %>
+  <%= label_tag :settings_bch_rpc_uri, 'RPC URI' %>
+  <%= text_field_tag 'settings[bch_rpc_uri]', @settings[:bch_rpc_uri], size: 64 %>
   <em class="info">
-    <%= l(:label_default) %>: <%= @plugin.settings[:default][:bch_rpc_url] %>
+    <%= l(:label_default) %>: <%= @plugin.settings[:default][:bch_rpc_uri] %>
   </em>
 </p>
 <p>
   <%= label_tag :settings_bch_confirmations, 'Confirmations' %>
   <%= number_field_tag 'settings[bch_confirmations]', @settings[:bch_confirmations],
-    min: 0, size: 2 %>
+    min: 1, size: 2 %>
   <em class="info">
     <%= l(:label_default) %>: <%= @plugin.settings[:default][:bch_confirmations] %>
   </em>
