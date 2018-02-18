@@ -21,10 +21,12 @@ module SettingsControllerPatch
         flash[:error] = "Cannot connect to #{uri}: #{e.message}"
       end
 
-      if params[:settings][:btc_confirmations] < 1:
+      if params[:settings][:btc_confirmations] < 1
         flash[:error] = "Confirmation threshold for BTC cannot be < 1"
-      if params[:settings][:bch_confirmations] < 1:
+      end
+      if params[:settings][:bch_confirmations] < 1
         flash[:error] = "Confirmation threshold for BCH cannot be < 1"
+      end
 
       if flash[:error]
         @plugin = Redmine::Plugin.find(params[:id])
