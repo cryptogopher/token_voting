@@ -35,6 +35,10 @@ class TokenVotesController < ApplicationController
     end
   end
 
+  def walletnotify
+    #add API key auth?
+  end
+
   private
   def token_vote_params
     params.require(:token_vote).permit(:token, :duration)

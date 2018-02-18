@@ -60,6 +60,8 @@ class TokenVote < ActiveRecord::Base
   end
 
   def generate_address
+    raise RuntimeError, 'Re-generating TokenVote address' if self.address
+
     rpc = self.get_rpc
     # Is there more efficient way to generate unique addressess using RPC?
     # (under all circumstances, including removing wallet file from RPC daemon)
@@ -67,7 +69,7 @@ class TokenVote < ActiveRecord::Base
       addr = rpc.getnewaddress
     end while TokenVote.exists?(address: addr)
 
-    self[:address] = addr
+    self.address = addr
   end
 
   def update_received_amount
@@ -75,6 +77,20 @@ class TokenVote < ActiveRecord::Base
     minimum_conf = TOKENS[self.token.to_sym][:min_conf]
     self.amount_unconf = rpc.getreceivedbyaddress(address: self.address, minconf: 0)
     self.amount_conf = rpc.getreceivedbyaddress(address: self.address, minconf: minimum_conf)
+  end
+
+  # Executed when wallet tx changes (bitcoind --walletnotify cmdline option)
+  def self.wallet_notify(txid)
+    rpc = self.get_rpc
+    tx = rpc.gettransaction(txid)
+
+    tx['details'].each do |detail|
+      token_vote = TokenVote.where(address: detail['address'])
+      raise RuntimeError, 'Multiple TokenVotes with same address' if token_vote.many?
+      if token_vote.any?
+        token_vote.first.update_received_amount
+      end
+    end
   end
 
   def self.compute_stats(token_votes)
@@ -111,6 +127,6 @@ class TokenVote < ActiveRecord::Base
 
   private
 
-  attr_writer :expiration, :address
+  attr_writer :expiration, :address, :amount_conf, :amount_unconf
 end
 
