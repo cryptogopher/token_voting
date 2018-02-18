@@ -32,13 +32,13 @@ class TokenVote < ActiveRecord::Base
     },
     BCH: {
       rpc_class: RPC::Bitcoin,
-      rpc_uri: Setting.plugin_token_voting[:bch_rpc_uri]
+      rpc_uri: Setting.plugin_token_voting[:bch_rpc_uri],
       min_conf: Setting.plugin_token_voting[:bch_confirmations],
     },
   }
   enum token: TOKENS.keys
 
-  enum status: [:requested, :unconfirmed, :confirmed, :resolved, :expired, :refunded]
+  #enum status: [:requested, :unconfirmed, :confirmed, :resolved, :expired, :refunded]
 
   def duration=(value)
     super(value.to_i)
@@ -52,7 +52,11 @@ class TokenVote < ActiveRecord::Base
   end
 
   def deletable?
-    self.visible? && self.requested?
+    self.visible? && !self.funded?
+  end
+
+  def funded?
+    self.amount_unconf > 0 || self.amount_conf > 0
   end
 
   def generate_address
@@ -76,14 +80,14 @@ class TokenVote < ActiveRecord::Base
   def self.compute_stats(token_votes)
     total_stats = Hash.new{|hash, key| hash[key] = Hash.new}
     STAT_PERIODS.values.each do |period|
-      # Get guaranteed amount per token in given period
+      # Get confirmed amount per token in given period
       stats = token_votes.
         where('expiration > ?', Time.current + period).
         group(:token).
-        sum(:amount)
-      stats.each do |token_index, amount|
+        sum(:amount_conf)
+      stats.each do |token_index, amount_conf|
         token_name = self.tokens.key(token_index)
-        total_stats[token_name][period] = amount if amount > 0.0
+        total_stats[token_name][period] = amount_conf if amount_conf > 0.0
       end
     end
     return total_stats
@@ -100,8 +104,8 @@ class TokenVote < ActiveRecord::Base
     if new_record?
       self.duration ||= 1.month
       self.token ||= :BCH
-      self.amount ||= 0
-      self.status ||= :requested
+      self.amount_conf ||= 0
+      self.amount_unconf ||= 0
     end
   end
 

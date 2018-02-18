@@ -15,14 +15,14 @@
       <tr>
         <th class="token">Token</th>
         <% TokenVote::STAT_PERIODS.keys.each do |period| %>
-          <th class="amount"><%= period %></th>
+          <th class="period"><%= period %></th>
         <% end %>
       </tr>
       <% @token_vote_stats.each do |token, stats| %>
         <tr>
           <td class="token"><%= token %></td>
-          <% stats.sort.each do |period, amount| %>
-            <td class="amount"><%= amount %></td>
+          <% stats.sort.each do |period, amount_conf| %>
+            <td class="amount"><%= amount_conf %></td>
           <% end %>
         </tr>
       <% end %>
