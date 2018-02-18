@@ -12,7 +12,7 @@ class TokenVote < ActiveRecord::Base
     "3 months" => 3.months,
     "6 months" => 6.months,
     "1 year" => 1.year,
-  }.freeze
+  }
   STAT_PERIODS = {
     "1 hour" => 1.hour,
     "1 day" => 1.day,
@@ -22,10 +22,14 @@ class TokenVote < ActiveRecord::Base
     "1 month" => 1.month,
     "3 months" => 3.months,
     "6 months" => 6.months,
-  }.freeze
+  }
 
+  TOKENS ={
+    BTC: {rpc_class: RPC::Bitcoin, rpc_uri: Setting.plugin_token_voting[:btc_rpc_url]},
+    BCH: {rpc_class: RPC::Bitcoin, rpc_uri: Setting.plugin_token_voting[:bch_rpc_url]},
+  }
+  enum token: TOKENS.keys
 
-  enum token: [:BTC, :BCH]
   enum status: [:requested, :unconfirmed, :confirmed, :resolved, :expired, :refunded]
 
   def duration=(value)
@@ -41,6 +45,18 @@ class TokenVote < ActiveRecord::Base
 
   def deletable?
     self.visible? && self.requested?
+  end
+
+  def generate_address
+    token_def = TOKENS[self.token.to_sym]
+    rpc = token_def[:rpc_class].new(token_def[:rpc_uri])
+
+    # Is there more efficient way to generate unique addressess using RPC?
+    begin
+      addr = rpc.getnewaddress
+    end while TokenVote.exists?(address: addr)
+
+    self[:address] = addr
   end
 
   def self.compute_stats(token_votes)
@@ -72,6 +88,6 @@ class TokenVote < ActiveRecord::Base
 
   private
 
-  attr_writer :expiration
+  attr_writer :expiration, :address
 end
 

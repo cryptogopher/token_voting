@@ -8,8 +8,12 @@ class TokenVotesController < ApplicationController
     @token_vote = TokenVote.new(token_vote_params)
     @token_vote.user = User.current
     @token_vote.issue = @issue
+    @token_vote.generate_address
+  rescue RPC::Error => e
+    flash[:error] = "Cannot create token vote - RPC error: #{e.message}"
+  else
     @token_vote.save
-
+  ensure
     respond_to do |format|
       format.html { redirect_to issue_path(@issue) }
       format.js {
