@@ -61,7 +61,7 @@ class TokenVote < ActiveRecord::Base
     # (under all circumstances, including removing wallet file from RPC daemon)
     begin
       addr = rpc.getnewaddress
-    end while TokenVote.exists?(address: addr)
+    end while TokenVote.exists?({token: token, address: addr})
 
     address = addr
   end

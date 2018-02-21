@@ -1,1 +1,3 @@
+$('#token_votes-flash').html('<%= j(render_flash_messages) %>');
+<% flash.discard %>
 $('#token_votes-table').html('<%= j(render :partial => 'issues/token_votes') %>');
