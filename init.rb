@@ -17,9 +17,13 @@ Redmine::Plugin.register :token_voting do
   end
 
   settings default: {
-    btc_rpc_uri: 'http://user:password@localhost:8332',
-    btc_confirmations: 6,
-    bch_rpc_uri: 'http://user:password@localhost:8332',
-    bch_confirmations: 6,
+    BTC: {
+      rpc_uri: 'http://user:password@localhost:8332',
+      min_conf: 6,
+    },
+    BCH: {
+      rpc_uri: 'http://user:password@localhost:8332',
+      min_conf: 6,
+    },
   }, partial: 'token_votes/settings'
 end

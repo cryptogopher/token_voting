@@ -8,24 +8,18 @@ module SettingsControllerPatch
       return unless request.post? && params[:id] == 'token_voting'
 
       begin
-        uri = params[:settings][:btc_rpc_uri]
-        rpc = RPC::Bitcoin.new(uri)
-        uri = rpc.uri.to_s
-        rpc.uptime
+        TokenVote.tokens.keys.each do |token|
+          uri = params[:settings][token][:rpc_uri]
+          rpc = RPC::get_rpc(token, uri)
+          uri = rpc.uri.to_s
+          rpc.uptime
 
-        uri = params[:settings][:bch_rpc_uri]
-        rpc = RPC::Bitcoin.new(uri)
-        uri = rpc.uri.to_s
-        rpc.uptime
+          if params[:settings][token][:min_conf] < 1
+            flash[:error] = "Confirmation threshold for #{token} cannot be < 1"
+          end
+        end
       rescue RPC::Error, URI::Error => e
         flash[:error] = "Cannot connect to #{uri}: #{e.message}"
-      end
-
-      if params[:settings][:btc_confirmations] < 1
-        flash[:error] = "Confirmation threshold for BTC cannot be < 1"
-      end
-      if params[:settings][:bch_confirmations] < 1
-        flash[:error] = "Confirmation threshold for BCH cannot be < 1"
       end
 
       if flash[:error]

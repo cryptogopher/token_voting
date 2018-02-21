@@ -3,7 +3,7 @@ require 'uri'
 require 'json'
 
 module RPC
-  class Bitcoin
+  class BTC
     attr_reader :uri
 
     def initialize(service_uri)
@@ -42,7 +42,5 @@ module RPC
       response.body
     end
   end
-
-  class Error < RuntimeError; end
 end
 
