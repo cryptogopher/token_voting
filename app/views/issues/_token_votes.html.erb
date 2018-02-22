@@ -15,11 +15,8 @@
         <td class="expiration"><%= format_date(token_vote.expiration) %></td>
         <td class="amount"><%= "#{token_vote.amount_conf} (#{token_vote.amount_conf})" %></td>
         <td class="buttons">
-          <% if token_vote.deletable? %>
-            <%= link_to image_tag('link_break.png'),
-              {controller: 'token_votes', action: 'destroy', id: token_vote},
-              {method: :delete, remote: true} %>
-          <% end %>
+          <%= link_to l(:button_delete), token_vote_path(token_vote), method: :delete,
+            remote: true, class: 'icon icon-del' if token_vote.deletable? %>
         </td>
       </tr>
     <% end %>
