@@ -7,19 +7,19 @@ module SettingsControllerPatch
     def token_voting_settings
       return unless request.post? && params[:id] == 'token_voting'
 
-      begin
-        TokenVote.tokens.keys.each do |token|
+      TokenVote.tokens.keys.each do |token|
+        begin
           uri = params[:settings][token][:rpc_uri]
           rpc = RPC::get_rpc(token, uri)
           uri = rpc.uri.to_s
           rpc.uptime
 
-          if params[:settings][token][:min_conf] < 1
+          if params[:settings][token][:min_conf].to_i < 1
             flash[:error] = "Confirmation threshold for #{token} cannot be < 1"
           end
+        rescue RPC::Error, URI::Error => e
+          flash[:error] = "Cannot connect to #{uri}: #{e.message}"
         end
-      rescue RPC::Error, URI::Error => e
-        flash[:error] = "Cannot connect to #{uri}: #{e.message}"
       end
 
       if flash[:error]

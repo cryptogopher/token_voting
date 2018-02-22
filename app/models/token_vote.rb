@@ -27,12 +27,6 @@ class TokenVote < ActiveRecord::Base
   enum token: {BTC: 0, BCH: 1}
 
   #enum status: [:requested, :unconfirmed, :confirmed, :resolved, :expired, :refunded]
-  
-  private
-
-  attr_writer :expiration, :address, :amount_conf, :amount_unconf
-
-  public
 
   def duration=(value)
     super(value.to_i)
@@ -40,46 +34,46 @@ class TokenVote < ActiveRecord::Base
   end
 
   def visible?
-    issue.visible? &&
-      user == User.current &&
-      User.current.allowed_to?(:manage_token_votes, issue.project)
+    self.issue.visible? &&
+      self.user == User.current &&
+      User.current.allowed_to?(:manage_token_votes, self.issue.project)
   end
 
   def deletable?
-    visible? && !funded?
+    self.visible? && !self.funded?
   end
 
   def funded?
-    amount_unconf > 0 || amount_conf > 0
+    self.amount_unconf > 0 || self.amount_conf > 0
   end
 
   def generate_address
-    raise RuntimeError, 'Re-generating TokenVote address' if address
+    raise RuntimeError, 'Re-generating TokenVote address' if self.address
 
-    rpc = RPC.get_rpc(token)
+    rpc = RPC.get_rpc(self.token)
     # Is there more efficient way to generate unique addressess using RPC?
     # (under all circumstances, including removing wallet file from RPC daemon)
     begin
       addr = rpc.getnewaddress
-    end while TokenVote.exists?({token: token, address: addr})
+    end while TokenVote.exists?({token: self.token, address: addr})
 
-    address = addr
+    self.address = addr
   end
 
   def update_received_amount
-    rpc = RPC.get_rpc(token)
-    minimum_conf = Settings.plugin_token_voting[token.to_sym][:min_conf]
-    amount_unconf = rpc.getreceivedbyaddress(address: address, minconf: 0)
-    amount_conf = rpc.getreceivedbyaddress(address: address, minconf: minimum_conf)
+    rpc = RPC.get_rpc(self.token)
+    minimum_conf = Settings.plugin_token_voting[self.token.to_sym][:min_conf]
+    self.amount_unconf = rpc.getreceivedbyaddress(address: self.address, minconf: 0)
+    self.amount_conf = rpc.getreceivedbyaddress(address: self.address, minconf: minimum_conf)
   end
 
   # Executed when wallet tx changes (bitcoind --walletnotify cmdline option)
   def self.wallet_notify(txid)
-    rpc = RPC.get_rpc(token)
+    rpc = RPC.get_rpc(self.token)
     tx = rpc.gettransaction(txid)
 
     tx['details'].each do |detail|
-      token_vote = TokenVote.where(address: detail['address'])
+      token_vote = TokenVote.find_by(address: detail['address'])
       raise RuntimeError, 'Multiple TokenVotes with same address' if token_vote.many?
       if token_vote.any?
         token_vote.first.update_received_amount
@@ -95,9 +89,9 @@ class TokenVote < ActiveRecord::Base
         where('expiration > ?', Time.current + period).
         group(:token).
         sum(:amount_conf)
-      stats.each do |token_index, amount_conf|
+      stats.each do |token_index, amount|
         token_name = tokens.key(token_index)
-        total_stats[token_name][period] = amount_conf if amount_conf > 0.0
+        total_stats[token_name][period] = amount if amount > 0.0
       end
     end
     return total_stats
@@ -107,10 +101,10 @@ class TokenVote < ActiveRecord::Base
 
   def set_defaults
     if new_record?
-      duration ||= 1.month
-      token ||= :BCH
-      amount_conf ||= 0
-      amount_unconf ||= 0
+      self.duration ||= 1.month
+      self.token ||= :BCH
+      self.amount_conf ||= 0
+      self.amount_unconf ||= 0
     end
   end
 end
