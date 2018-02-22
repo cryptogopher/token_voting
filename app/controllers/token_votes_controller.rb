@@ -1,3 +1,5 @@
+class InvalidToken < Exception; end
+
 class TokenVotesController < ApplicationController
   unloadable
 
@@ -35,7 +37,15 @@ class TokenVotesController < ApplicationController
     end
   end
 
+  # Executed when wallet tx changes (bitcoind --walletnotify cmdline option)
   def walletnotify
+    token = params[:token].to_sym
+    raise InvalidToken unless TokenVote.tokens.has_key(token)
+    rpc = RPC.get_rpc(token)
+
+    addresses = rpc.get_tx_addresses(params[:txid])
+    TokenVote.where(address: addresses).each.update_received_amount
+
     #add API key auth?
   end
 

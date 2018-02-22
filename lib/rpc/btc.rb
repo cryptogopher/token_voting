@@ -13,9 +13,22 @@ module RPC
       end
     end
 
+    def get_tx_addresses(txid)
+      tx = self.gettransaction(txid)
+      addresses = tx['details'].each { |detail| detail['address'] }
+    end
+
+    protected
+
     # https://bitcoin.org/en/developer-reference#rpc-quick-reference
     def method_missing(name, *args)
-      post_body = { method: name, params: args, id: 'token_voting', jsonrpc: '1.0' }.to_json
+      post_body = {
+        method: name.delete('_'),
+        params: args,
+        id: 'token_voting',
+        jsonrpc: '1.0'
+      }.to_json
+
       response = JSON.parse(post_http_request(post_body))
       if response['error']
         raise Error, response['error']

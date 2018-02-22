@@ -23,6 +23,7 @@ class TokenVote < ActiveRecord::Base
   }
 
   enum token: {BTC: 0, BCH: 1}
+  #enum status: [:requested, :unconfirmed, :confirmed, :resolved, :expired, :refunded]
 
   validates :user, :issue, presence: true, associated: true
   validates :duration, inclusion: { in: DURATIONS.values }
@@ -31,8 +32,6 @@ class TokenVote < ActiveRecord::Base
   validates :amount_conf, :amount_unconf, numericality: { grater_than_or_equal_to: 0 }
 
   after_initialize :set_defaults
-
-  #enum status: [:requested, :unconfirmed, :confirmed, :resolved, :expired, :refunded]
 
   def duration=(value)
     super(value.to_i)
@@ -60,7 +59,7 @@ class TokenVote < ActiveRecord::Base
     # Is there more efficient way to generate unique addressess using RPC?
     # (under all circumstances, including removing wallet file from RPC daemon)
     begin
-      addr = rpc.getnewaddress
+      addr = rpc.get_new_address
     end while TokenVote.exists?({token: self.token, address: addr})
 
     self.address = addr
@@ -69,22 +68,10 @@ class TokenVote < ActiveRecord::Base
   def update_received_amount
     rpc = RPC.get_rpc(self.token)
     minimum_conf = Settings.plugin_token_voting[self.token.to_sym][:min_conf]
-    self.amount_unconf = rpc.getreceivedbyaddress(address: self.address, minconf: 0)
-    self.amount_conf = rpc.getreceivedbyaddress(address: self.address, minconf: minimum_conf)
-  end
-
-  # Executed when wallet tx changes (bitcoind --walletnotify cmdline option)
-  def self.wallet_notify(txid)
-    rpc = RPC.get_rpc(self.token)
-    tx = rpc.gettransaction(txid)
-
-    tx['details'].each do |detail|
-      token_vote = TokenVote.find_by(address: detail['address'])
-      raise RuntimeError, 'Multiple TokenVotes with same address' if token_vote.many?
-      if token_vote.any?
-        token_vote.first.update_received_amount
-      end
-    end
+    self.amount_unconf = 
+      rpc.get_received_by_address(address: self.address, minconf: 0)
+    self.amount_conf = 
+      rpc.get_received_by_address(address: self.address, minconf: minimum_conf)
   end
 
   def self.compute_stats(token_votes)

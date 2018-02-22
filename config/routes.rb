@@ -7,5 +7,6 @@ resources :issues do
       resources :token_votes, :controller => 'token_votes', :only => [:create, :destroy]
     end
 end
-get 'token_votes/walletnotify/:txid', to: 'token_votes#walletnotify', as: 'walletnotify'
+get 'token_votes/walletnotify/:token/:txid', to: 'token_votes#walletnotify',
+  as: 'walletnotify_token_vote'
 
