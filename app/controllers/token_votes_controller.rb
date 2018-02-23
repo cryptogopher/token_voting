@@ -5,14 +5,14 @@ class TokenVotesController < ApplicationController
   before_filter :find_token_vote, :only => [:destroy]
   accept_api_auth :walletnotify
 
-  rescue_from 'RPC::Error' do |e|
-    flash[:error] = "Wallet RPC call error: #{e.message}"
-    @api_status = :service_unavailable
-  end
-  rescue_from 'TokenVote::Error' do |e|
-    flash[:error] = "TokenVote method error: #{e.message}"
-    @api_status = :bad_request
-  end
+#  rescue_from 'RPC::Error' do |e|
+#    flash[:error] = "Wallet RPC call error: #{e.message}"
+#    @api_status = :service_unavailable
+#  end
+#  rescue_from 'TokenVote::Error' do |e|
+#    flash[:error] = "TokenVote method error: #{e.message}"
+#    @api_status = :bad_request
+#  end
 
   def create
     @token_vote = TokenVote.new(token_vote_params)
@@ -45,10 +45,16 @@ class TokenVotesController < ApplicationController
   # Executed when wallet tx changes (bitcoind --walletnotify cmdline option)
   def walletnotify
     TokenVote.update_amounts_by_txid(params[:token], params[:txid])
+  rescue RPC::Error => exc
+    api_message = "Wallet RPC call error: #{exc.message}"
+    api_status = :service_unavailable
+  rescue TokenVote::Error => exc
+    api_message = exc.message
+    api_status = :bad_request
   ensure
     respond_to do |format|
       format.api {
-        render text: flash['error'] || '', status: @api_status || :ok, layout: nil
+        render text: (api_message || ''), status: (api_status || :ok), layout: nil
       }
     end
   end

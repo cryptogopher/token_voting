@@ -15,7 +15,7 @@ module RPC
 
     def get_tx_addresses(txid)
       tx = self.gettransaction(txid)
-      addresses = tx['details'].each { |detail| detail['address'] }
+      addresses = tx['details'].map { |detail| detail['address'] }
     end
 
     protected

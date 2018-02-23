@@ -1,7 +1,11 @@
 class TokenVote < ActiveRecord::Base
   unloadable
 
-  class Error < Exception; end
+  class Error < Exception
+    def to_s
+      "TokenVote method error: #{super}"
+    end
+  end
 
   belongs_to :issue
   belongs_to :user
@@ -55,7 +59,7 @@ class TokenVote < ActiveRecord::Base
   end
 
   def generate_address
-    raise Error, 'Re-generating TokenVote address' if self.address
+    raise Error, 'Re-generating existing address' if self.address
 
     rpc = RPC.get_rpc(self.token)
     # Is there more efficient way to generate unique addressess using RPC?
@@ -94,11 +98,11 @@ class TokenVote < ActiveRecord::Base
 
   def self.update_amounts_by_txid(token, txid)
     token = token.to_sym
-    raise Error, 'Invalid token' unless tokens.has_key(token)
+    raise Error, "Invalid token: #{token.to_s}" unless tokens.has_key?(token)
 
     rpc = RPC.get_rpc(token)
-    addresses = rpc.get_tx_addresses(params[:txid])
-    TokenVote.where(address: addresses).each.update_received_amount
+    addresses = rpc.get_tx_addresses(txid)
+    TokenVote.where(address: addresses).each { |tv| tv.update_received_amount }
   end
 
   protected
