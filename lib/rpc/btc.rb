@@ -23,7 +23,7 @@ module RPC
     # https://bitcoin.org/en/developer-reference#rpc-quick-reference
     def method_missing(name, *args)
       post_body = {
-        method: name.delete('_'),
+        method: name.to_s.delete('_'),
         params: args,
         id: 'token_voting',
         jsonrpc: '1.0'
@@ -41,7 +41,7 @@ module RPC
       http.open_timeout = 10
       http.read_timeout = 10
       request = Net::HTTP::Post.new(@uri.request_uri)
-      request.basic_auth @uri.user, @uri.password
+      request.basic_auth(@uri.user, @uri.password)
       request.content_type = 'application/json'
       request.body = post_body
       begin
