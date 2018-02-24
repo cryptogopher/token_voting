@@ -1,7 +1,7 @@
 class TokenVote < ActiveRecord::Base
   unloadable
 
-  class Error < Exception
+  class Error < RuntimeError
     def to_s
       "TokenVote method error: #{super}"
     end

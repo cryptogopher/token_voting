@@ -1,5 +1,9 @@
 module RPC
-  class Error < RuntimeError; end
+  class Error < RuntimeError
+    def to_s
+      "Wallet RPC call error: #{super}"
+    end
+  end
 
   module_function
 
