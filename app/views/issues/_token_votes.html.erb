@@ -3,15 +3,19 @@
   <table class="list">
     <tr>
       <th class="token">Token</th>
-      <th class="address" style="width: 50%">Address</th>
+      <th class="address">Address (hover to see qrcode)</th>
       <th class="expiration">Expiration</th>
-      <th class="amount">Amount: conf. (unconf.)</th>
+      <th class="amount">Amount (unconf.)</th>
       <th class="buttons">Delete</th>
     </tr>
     <% @token_votes.each do |token_vote| %>
       <tr id="token_vote-<%= token_vote.id %>">
         <td class="token"><%= token_vote.token %></td>
-        <td class="address" style="width: 50%"><%= token_vote.address %></td>
+        <td class="address" cursor="pointer"
+            onmouseover="$('#qrcode<%= token_vote.id %>').show()"
+            onmouseout="$('#qrcode<%= token_vote.id %>').hide()">
+          <%= token_vote.address %>
+        </td>
         <td class="expiration"><%= format_date(token_vote.expiration) %></td>
         <td class="amount"><%= "#{token_vote.amount_conf} (#{token_vote.amount_conf})" %></td>
         <td class="buttons">
@@ -19,6 +23,9 @@
             remote: true, class: 'icon icon-del' if token_vote.deletable? %>
         </td>
       </tr>
+      <tr id="qrcode<%= token_vote.id %>" style="display: none">
+        <td colspan="5"><img src="<%= qrcode_data_uri(token_vote.address) %>" /></td>
+      </div>
     <% end %>
   </table>
 <% end %>

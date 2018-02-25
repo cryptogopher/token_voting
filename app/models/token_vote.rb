@@ -110,7 +110,7 @@ class TokenVote < ActiveRecord::Base
   def set_defaults
     if new_record?
       self.duration ||= 1.month
-      self.token ||= :BCH
+      self.token ||= :BTC
       self.amount_conf ||= 0
       self.amount_unconf ||= 0
     end

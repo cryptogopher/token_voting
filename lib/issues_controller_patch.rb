@@ -15,3 +15,4 @@ module IssuesControllerPatch
 end
 
 IssuesController.include IssuesControllerPatch
+
