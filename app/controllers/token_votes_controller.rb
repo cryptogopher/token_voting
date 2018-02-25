@@ -5,6 +5,8 @@ class TokenVotesController < ApplicationController
   before_filter :find_token_vote, :only => [:destroy]
   accept_api_auth :walletnotify
 
+  helper IssuesHelper
+
   def create
     @token_vote = TokenVote.new(token_vote_params)
     @token_vote.user = User.current
