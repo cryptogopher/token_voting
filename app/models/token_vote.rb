@@ -73,7 +73,7 @@ class TokenVote < ActiveRecord::Base
 
   def update_received_amount
     rpc = RPC.get_rpc(self.token)
-    minimum_conf = Settings.plugin_token_voting[self.token.to_sym][:min_conf]
+    minimum_conf = Setting.plugin_token_voting[self.token.to_sym][:min_conf]
     self.amount_unconf = 
       rpc.get_received_by_address(address: self.address, minconf: 0)
     self.amount_conf = 
@@ -110,7 +110,7 @@ class TokenVote < ActiveRecord::Base
   def set_defaults
     if new_record?
       self.duration ||= 1.month
-      self.token ||= :BTC
+      self.token ||= Setting.plugin_token_voting[:default_token]
       self.amount_conf ||= 0
       self.amount_unconf ||= 0
     end

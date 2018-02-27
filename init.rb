@@ -17,6 +17,7 @@ Redmine::Plugin.register :token_voting do
   end
 
   settings default: {
+    default_token: :BTCTEST,
     BTC: {
       rpc_uri: 'http://user:password@localhost:8332',
       min_conf: 6,

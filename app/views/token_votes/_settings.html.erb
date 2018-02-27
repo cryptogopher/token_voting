@@ -1,5 +1,12 @@
 <p>
-<%= label_tag :settings_btc, 'BTC' %>
+  <%= label_tag :settings_default_token, 'Default token' %>
+  <%= select_tag 'settings[default_token]',
+    options_for_select(TokenVote.tokens.keys, @settings[:default_token]) %>
+</p>
+
+<hr/>
+<p>
+  <%= label_tag :settings_btc, 'BTC' %>
 </p>
 <p>
   <%= label_tag :settings_btc_rpc_uri, 'RPC URI' %>
