@@ -36,3 +36,25 @@
     <%= l(:label_default) %>: <%= @plugin.settings[:default][:BCH][:min_conf] %>
   </em>
 </p>
+
+<hr/>
+<p>
+  <%= label_tag :settings_btctest, 'BTCTEST' %>
+  <em class="info"><%= 'BTC testnet' %></em>
+</p>
+<p>
+  <%= label_tag :settings_btctest_rpc_uri, 'RPC URI' %>
+  <%= text_field_tag 'settings[BTCTEST][rpc_uri]', @settings[:BTCTEST][:rpc_uri], size: 64 %>
+  <em class="info">
+    <%= l(:label_default) %>: <%= @plugin.settings[:default][:BTCTEST][:rpc_uri] %>
+  </em>
+</p>
+<p>
+  <%= label_tag :settings_btctest_min_conf, 'Minimum confirmations' %>
+  <%= number_field_tag 'settings[BTCTEST][min_conf]', @settings[:BTCTEST][:min_conf],
+    min: 1, size: 2 %>
+  <em class="info">
+    <%= l(:label_default) %>: <%= @plugin.settings[:default][:BTCTEST][:min_conf] %>
+  </em>
+</p>
+

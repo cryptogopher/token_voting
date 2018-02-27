@@ -25,5 +25,9 @@ Redmine::Plugin.register :token_voting do
       rpc_uri: 'http://user:password@localhost:8332',
       min_conf: 6,
     },
+    BTCTEST: {
+      rpc_uri: 'http://user:password@localhost:18332',
+      min_conf: 6,
+    },
   }, partial: 'token_votes/settings'
 end

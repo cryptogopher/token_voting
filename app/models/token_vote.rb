@@ -28,7 +28,7 @@ class TokenVote < ActiveRecord::Base
     "6 months" => 6.months,
   }
 
-  enum token: {BTC: 0, BCH: 1}
+  enum token: {BTC: 0, BCH: 1, BTCTEST: 1000}
   #enum status: [:requested, :unconfirmed, :confirmed, :resolved, :expired, :refunded]
 
   validates :user, :issue, presence: true, associated: true
