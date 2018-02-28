@@ -3,17 +3,15 @@
   <table class="list">
     <tr>
       <th class="token">Token</th>
-      <th class="address">Address (hover to see qrcode)</th>
+      <th class="address">Address (click to show qrcode)</th>
       <th class="expiration">Expiration</th>
       <th class="amount">Amount (unconf.)</th>
-      <th class="buttons">Delete</th>
+      <th class="actions">Actions</th>
     </tr>
     <% @token_votes.each do |token_vote| %>
       <tr id="token_vote-<%= token_vote.id %>">
         <td class="token"><%= token_vote.token %></td>
-        <td class="address" cursor="pointer"
-            onmouseover="$('#qrcode<%= token_vote.id %>').show()"
-            onmouseout="$('#qrcode<%= token_vote.id %>').hide()">
+        <td class="address" onclick="$('#qrcode<%= token_vote.id %>').toggle()">
           <%= token_vote.address %>
         </td>
         <td class="expiration"><%= format_date(token_vote.expiration) %></td>
