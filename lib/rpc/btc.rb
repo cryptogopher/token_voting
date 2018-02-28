@@ -46,6 +46,8 @@ module RPC
       request.body = post_body
       begin
         response = http.request(request)
+        #puts response
+        #puts request.body
       rescue StandardError => e
         raise Error, e.message
       end

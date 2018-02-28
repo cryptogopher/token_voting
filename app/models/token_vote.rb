@@ -73,11 +73,11 @@ class TokenVote < ActiveRecord::Base
 
   def update_received_amount
     rpc = RPC.get_rpc(self.token)
-    minimum_conf = Setting.plugin_token_voting[self.token.to_sym][:min_conf]
-    self.amount_unconf = 
-      rpc.get_received_by_address(address: self.address, minconf: 0)
+    minimum_conf = Setting.plugin_token_voting[self.token.to_sym][:min_conf].to_i
     self.amount_conf = 
-      rpc.get_received_by_address(address: self.address, minconf: minimum_conf)
+      rpc.get_received_by_address(self.address, minimum_conf)
+    self.amount_unconf = 
+      rpc.get_received_by_address(self.address, 0) - self.amount_conf
   end
 
   def self.compute_stats(token_votes)
@@ -102,7 +102,10 @@ class TokenVote < ActiveRecord::Base
 
     rpc = RPC.get_rpc(token)
     addresses = rpc.get_tx_addresses(txid)
-    TokenVote.where(address: addresses).each { |tv| tv.update_received_amount }
+    TokenVote.where(address: addresses).each do |tv|
+      tv.update_received_amount
+      tv.save
+    end
   end
 
   protected

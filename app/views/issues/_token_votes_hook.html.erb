@@ -22,7 +22,7 @@
         <tr>
           <td class="token"><%= token %></td>
           <% stats.sort.each do |period, amount_conf| %>
-            <td class="amount"><%= amount_conf %></td>
+            <td class="amount"><%= humanify_amount(amount_conf) %></td>
           <% end %>
         </tr>
       <% end %>

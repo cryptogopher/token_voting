@@ -8,6 +8,15 @@ module IssuesHelperPatch
       png = qrcode.as_png(size: 256, border_modules: 2)
       png.to_data_url
     end
+
+    TOKEN_UNITS = {
+      unit: '', thousand: 'k', million: 'M', billion: 'G',
+      mili: 'm', micro: 'u', nano: 'n'
+    }
+    # Display amount in human readable format
+    def humanify_amount(amount)
+      number_to_human(amount, units: TOKEN_UNITS)
+    end
   end
 end
 

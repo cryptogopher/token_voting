@@ -17,7 +17,10 @@
           <%= token_vote.address %>
         </td>
         <td class="expiration"><%= format_date(token_vote.expiration) %></td>
-        <td class="amount"><%= "#{token_vote.amount_conf} (#{token_vote.amount_conf})" %></td>
+        <td class="amount">
+          <%= "#{humanify_amount(token_vote.amount_conf)}" %>
+          <%= "(#{humanify_amount(token_vote.amount_unconf)})" %>
+        </td>
         <td class="buttons">
           <%= link_to l(:button_delete), token_vote_path(token_vote), method: :delete,
             remote: true, class: 'icon icon-del' if token_vote.deletable? %>
