@@ -71,7 +71,7 @@ class TokenVote < ActiveRecord::Base
     self.address = new_address
   end
 
-  def update_received_amount
+  def update_amounts
     rpc = RPC.get_rpc(self.token)
     minimum_conf = Setting.plugin_token_voting[self.token.to_sym][:min_conf].to_i
     self.amount_conf = 
@@ -96,14 +96,25 @@ class TokenVote < ActiveRecord::Base
     return total_stats
   end
 
-  def self.update_amounts_by_txid(token, txid)
+  def self.update_txn_amounts(token, txid)
     token = token.to_sym
     raise Error, "Invalid token: #{token.to_s}" unless tokens.has_key?(token)
 
     rpc = RPC.get_rpc(token)
     addresses = rpc.get_tx_addresses(txid)
-    TokenVote.where(address: addresses).each do |tv|
-      tv.update_received_amount
+    TokenVote.where(token: tokens[token], address: addresses).each do |tv|
+      tv.update_amounts
+      tv.save
+    end
+  end
+
+  def self.update_unconfirmed_amounts(token, blockhash)
+    token = token.to_sym
+    raise Error, "Invalid token: #{token.to_s}" unless tokens.has_key?(token)
+
+    rpc = RPC.get_rpc(token)
+    TokenVote.where('token = ? and amount_unconf != 0', tokens[token]).each do |tv|
+      tv.update_amounts
       tv.save
     end
   end

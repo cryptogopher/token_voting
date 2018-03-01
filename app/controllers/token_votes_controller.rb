@@ -3,7 +3,7 @@ class TokenVotesController < ApplicationController
 
   before_filter :find_issue, :authorize, :only => [:create]
   before_filter :find_token_vote, :only => [:destroy]
-  accept_api_auth :walletnotify
+  accept_api_auth :walletnotify, :blocknotify
 
   helper IssuesHelper
 
@@ -40,9 +40,26 @@ class TokenVotesController < ApplicationController
     end
   end
 
-  # Executed when wallet tx changes (e.g. bitcoind --walletnotify cmdline option)
+  # For bitcoind: executed when tx broadcasted and after first confirmation
+  # (bitcoind --walletnotify cmdline option)
   def walletnotify
-    TokenVote.update_amounts_by_txid(params[:token], params[:txid])
+    service_api_request {
+      TokenVote.update_txn_amounts(params[:token], params[:txid])
+    }
+  end
+
+  # For bitcoind: executed when new block is found
+  # (bitcoind --blocknotify cmdline option)
+  def blocknotify
+    service_api_request {
+      TokenVote.update_unconfirmed_amounts(params[:token], params[:blockhash])
+    }
+  end
+
+  private
+
+  def service_api_request
+    yield
 
   rescue RPC::Error => e
     api_message = e.message
@@ -58,8 +75,6 @@ class TokenVotesController < ApplicationController
       }
     end
   end
-
-  private
 
   def token_vote_params
     params.require(:token_vote).permit(:token, :duration)
