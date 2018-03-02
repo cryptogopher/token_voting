@@ -9,7 +9,7 @@ class TokenVotesController < ApplicationController
 
   def create
     @token_vote = TokenVote.new(token_vote_params)
-    @token_vote.user = User.current
+    @token_vote.voter = User.current
     @token_vote.issue = @issue
     @token_vote.generate_address
     @token_vote.save

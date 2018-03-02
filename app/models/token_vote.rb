@@ -8,7 +8,9 @@ class TokenVote < ActiveRecord::Base
   end
 
   belongs_to :issue
-  belongs_to :user
+  belongs_to :voter, class_name: 'User'
+  belongs_to :resolver, class_name: 'User'
+  belongs_to :integrator, class_name: 'User'
 
   DURATIONS = {
     "1 week" => 1.week,
@@ -31,7 +33,8 @@ class TokenVote < ActiveRecord::Base
   enum token: {BTC: 0, BCH: 1, BTCTEST: 1000}
   #enum status: [:requested, :unconfirmed, :confirmed, :resolved, :expired, :refunded]
 
-  validates :user, :issue, presence: true, associated: true
+  validates :voter, :issue, presence: true, associated: true
+  validates :resolver, :integrator, associated: true
   validates :duration, inclusion: { in: DURATIONS.values }
   validates :expiration, :address, presence: true
   validates :token, inclusion: { in: tokens.keys }
@@ -46,7 +49,7 @@ class TokenVote < ActiveRecord::Base
 
   def visible?
     self.issue.visible? &&
-      self.user == User.current &&
+      self.voter == User.current &&
       User.current.allowed_to?(:manage_token_votes, self.issue.project)
   end
 
