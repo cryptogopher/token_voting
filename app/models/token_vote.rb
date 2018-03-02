@@ -47,6 +47,10 @@ class TokenVote < ActiveRecord::Base
     self[:expiration] = Time.current + self[:duration]
   end
 
+  def funded?
+    self.amount_unconf > 0 || self.amount_conf > 0
+  end
+
   def visible?
     self.issue.visible? &&
       self.voter == User.current &&
@@ -57,8 +61,12 @@ class TokenVote < ActiveRecord::Base
     self.visible? && !self.funded?
   end
 
-  def funded?
-    self.amount_unconf > 0 || self.amount_conf > 0
+  def resolved?
+    self.integrator != nil
+  end
+
+  def expired?
+    Time.current >= self.expiration && !self.resolved?
   end
 
   def generate_address
