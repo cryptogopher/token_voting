@@ -36,3 +36,7 @@
   <div id="token_votes-flash"></div>
   <%= render partial: 'token_votes/form' %>
 </div>
+
+<% content_for :header_tags do %>
+  <%= stylesheet_link_tag 'token_voting', :plugin => 'token_voting' %>
+<% end %>

@@ -11,15 +11,15 @@
     <% @token_votes.each do |token_vote| %>
       <tr id="token_vote-<%= token_vote.id %>">
         <td class="token"><%= token_vote.token %></td>
-        <td class="address" onclick="$('#qrcode<%= token_vote.id %>').toggle()">
-          <%= token_vote.address %>
-        </td>
+        <td class="address"><%= token_vote.address %></td>
         <td class="expiration"><%= format_date(token_vote.expiration) %></td>
         <td class="amount">
           <%= "#{humanify_amount(token_vote.amount_conf)}" %>
           <%= "(#{humanify_amount(token_vote.amount_unconf)})" %>
         </td>
         <td class="buttons">
+          <%= link_to_function 'QR code', "$('#qrcode#{token_vote.id}').toggle()",
+            class: 'icon icon-qrcode' %>
           <%= link_to l(:button_delete), token_vote_path(token_vote), method: :delete,
             remote: true, class: 'icon icon-del' if token_vote.deletable? %>
         </td>

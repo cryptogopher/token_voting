@@ -51,10 +51,10 @@ class TokenVote < ActiveRecord::Base
     self.amount_unconf > 0 || self.amount_conf > 0
   end
 
-  def visible?
+  def visible?(user = User.current)
     self.issue.visible? &&
-      self.voter == User.current &&
-      User.current.allowed_to?(:manage_token_votes, self.issue.project)
+      self.voter == user &&
+      user.allowed_to?(:manage_token_votes, self.issue.project)
   end
 
   def deletable?
