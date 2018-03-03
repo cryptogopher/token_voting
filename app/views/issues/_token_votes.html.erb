@@ -18,10 +18,10 @@
           <%= "(#{humanify_amount(token_vote.amount_unconf)})" %>
         </td>
         <td class="buttons">
-          <%= link_to_function 'QR code', "$('#qrcode#{token_vote.id}').toggle()",
-            class: 'icon icon-qrcode' %>
           <%= link_to l(:button_delete), token_vote_path(token_vote), method: :delete,
             remote: true, class: 'icon icon-del' if token_vote.deletable? %>
+          <%= link_to_function 'QR code', "$('#qrcode#{token_vote.id}').toggle()",
+            class: 'icon icon-qrcode' %>
         </td>
       </tr>
       <tr id="qrcode<%= token_vote.id %>" style="display: none">
