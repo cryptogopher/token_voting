@@ -1,5 +1,11 @@
 <hr/>
 <div id="token_votes">
+  <div class="contextual">
+    <% if User.current.allowed_to?(:manage_token_votes, @project) %>
+      <%= toggle_link l(:button_add), 'new-token-vote-form', focus: 'token_vote_duration' %>
+    <% end %>
+  </div>
+
   <p>
     <strong><%= l :label_token_votes %></strong>
   </p>
@@ -22,12 +28,6 @@
       <% end %>
     </table>
   <% end %>
-
-  <div class="contextual">
-    <% if User.current.allowed_to?(:manage_token_votes, @project) %>
-      <%= toggle_link l(:button_add), 'new-token-vote-form', focus: 'token_vote_duration' %>
-    <% end %>
-  </div>
 
   <div id="token_votes-table">
     <%= render partial: 'issues/token_votes' %>

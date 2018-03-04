@@ -1,38 +1,43 @@
-<table class="list">
-  <tr>
-    <th class="id">#</th>
-    <th class="subject">Subject</th>
-    <th class="token">Token</th>
-    <th class="address">Address (click to show qrcode)</th>
-    <th class="expiration">Expiration</th>
-    <th class="amount">Amount (unconf.)</th>
-    <th class="actions">Actions</th>
-  </tr>
-  <% @token_votes[tab[:name]].each do |token_vote| %>
-    <tr id="token_vote-<%= token_vote.id %>" class="<%= cycle("odd", "even") %>">
-      <td class="id">
-        <%= link_to token_vote.issue.id, issue_path(token_vote.issue) %>
-      </td>
-      <td class="subject">
-        <%= link_to token_vote.issue.subject, issue_path(token_vote.issue) %>
-      </td>
-      <td class="token"><%= token_vote.token %></td>
-      <td class="address"><%= token_vote.address %></td>
-      <td class="expiration"><%= format_date(token_vote.expiration) %></td>
-      <td class="amount">
-        <%= "#{humanify_amount(token_vote.amount_conf)}" %>
-        <%= "(#{humanify_amount(token_vote.amount_unconf)})" %>
-      </td>
-      <td class="buttons">
-        <%= link_to l(:button_delete), token_vote_path(token_vote), method: :delete,
-          remote: true, class: 'icon icon-del' if token_vote.deletable? %>
-        <%= link_to_function 'QR code', "$('#qrcode#{token_vote.id}').toggle()",
-          class: 'icon icon-qrcode' %>
-      </td>
+<% if @token_votes.has_key?(tab[:name]) && @token_votes[tab[:name]].present? %>
+  <table class="list issues">
+    <tr>
+      <th class="id">#</th>
+      <th class="subject">Subject</th>
+      <th class="token">Token</th>
+      <th class="address">Address (click to show qrcode)</th>
+      <th class="expiration">Expiration</th>
+      <th class="amount">Amount (unconf.)</th>
+      <th class="actions">Actions</th>
     </tr>
-    <tr id="qrcode<%= token_vote.id %>" style="display: none">
-      <td colspan="7"><img src="<%= qrcode_data_uri(token_vote.address) %>" /></td>
-    </tr>
-  <% end %>
-  <% reset_cycle %>
-</table>
+    <% @token_votes[tab[:name]].each do |token_vote| %>
+      <tr id="token_vote-<%= token_vote.id %>" class="<%= cycle('odd', 'even') %>">
+        <td class="id">
+          <%= link_to token_vote.issue.id, issue_path(token_vote.issue) %>
+        </td>
+        <td class="subject">
+          <%= link_to token_vote.issue.subject, issue_path(token_vote.issue) %>
+        </td>
+        <td class="token"><%= token_vote.token %></td>
+        <td class="address"><%= token_vote.address %></td>
+        <td class="expiration"><%= format_date(token_vote.expiration) %></td>
+        <td class="amount">
+          <%= "#{humanify_amount(token_vote.amount_conf)}" %>
+          <%= "(#{humanify_amount(token_vote.amount_unconf)})" %>
+        </td>
+        <td class="buttons">
+          <%= link_to l(:button_delete), token_vote_path(token_vote), method: :delete,
+            remote: true, class: 'icon icon-del' if token_vote.deletable? %>
+          <%= link_to_function 'QR code', "$('#qrcode#{token_vote.id}').toggle()",
+            class: 'icon icon-qrcode' %>
+      </td>
+      </tr>
+      <tr id="qrcode<%= token_vote.id %>" style="display: none">
+        <td colspan="7"><img src="<%= qrcode_data_uri(token_vote.address) %>" /></td>
+      </tr>
+    <% end %>
+    <% reset_cycle %>
+  </table>
+<% else %>
+  <p class="nodata"><%= l(:label_no_data) %></p>
+<% end %>
+
