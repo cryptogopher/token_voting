@@ -66,8 +66,15 @@ class TokenVote < ActiveRecord::Base
   end
 
   def expired?
-    Time.current >= self.expiration && !self.resolved?
+    self.expiration <= Time.current && !self.resolved?
   end
+
+  scope :resolved, -> { where.not(integrator: nil) }
+  scope :expired, -> { where(integrator: nil).where("expiration <= ?", Time.current) }
+  scope :active, -> { where(integrator: nil).where("expiration > ?", Time.current) }
+
+  # resolver hook should only set resolver/integrator user if
+  # resolved/integrated before expiration
 
   def generate_address
     raise Error, 'Re-generating existing address' if self.address
@@ -92,7 +99,7 @@ class TokenVote < ActiveRecord::Base
   end
 
   def self.compute_stats(token_votes)
-    total_stats = Hash.new{|hash, key| hash[key] = Hash.new}
+    total_stats = Hash.new {|hash, key| hash[key] = Hash.new}
     STAT_PERIODS.values.each do |period|
       # Get confirmed amount per token in given period
       stats = token_votes.

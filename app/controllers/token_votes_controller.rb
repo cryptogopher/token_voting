@@ -1,8 +1,9 @@
 class TokenVotesController < ApplicationController
   unloadable
 
-  before_filter :find_issue, :authorize, :only => [:create]
-  before_filter :find_token_vote, :only => [:destroy]
+  before_filter :authorize, only: [:my]
+  before_filter :find_issue, :authorize, only: [:create]
+  before_filter :find_token_vote, only: [:destroy]
   accept_api_auth :walletnotify, :blocknotify
 
   helper IssuesHelper
@@ -19,7 +20,6 @@ class TokenVotesController < ApplicationController
 
   ensure
     respond_to do |format|
-      format.html { redirect_to issue_path(@issue) }
       format.js {
         @token_votes = @issue.reload.token_votes.select {|tv| tv.visible?}
       }
@@ -33,7 +33,6 @@ class TokenVotesController < ApplicationController
     @token_vote.destroy
 
     respond_to do |format|
-      format.html { redirect_to issue_path(@issue) }
       format.js {
         @token_votes = @issue.reload.token_votes.select {|tv| tv.visible?}
       }
@@ -54,6 +53,26 @@ class TokenVotesController < ApplicationController
     service_api_request {
       TokenVote.update_unconfirmed_amounts(params[:token], params[:blockhash])
     }
+  end
+
+  MY_TOKEN_VOTES_TABS = [
+    {:name => 'active', :partial => 'token_votes/my/index', :label => :label_active_votes},
+    {:name => 'resolved', :partial => 'token_votes/my/index', :label => :label_resolved_votes},
+    {:name => 'expired', :partial => 'token_votes/my/index', :label => :label_expired_votes},
+    {:name => 'withdrawals', :partial => 'token_votes/my/index',
+     :label => :label_token_withdrawals},
+  ]
+
+  # /my/token_votes
+  def my
+    @token_votes = Hash.new([])
+    [:active, :resolved, :expired].each do |status|
+      @token_votes[status.to_s] = TokenVote.where(voter: User.current).send(status)
+    end
+    
+    respond_to do |format|
+      format.html { @token_votes_tabs = MY_TOKEN_VOTES_TABS }
+    end
   end
 
   private

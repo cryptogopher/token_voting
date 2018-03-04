@@ -6,10 +6,10 @@
 
   <p>
   <%= f.label :duration, "My precious new" %>
-  <%= f.select :token, TokenVote.tokens.keys %>
+  <%= f.select :token, token_vote_token_options %>
 
   <%= f.label :duration, "vote will expire in" %>
-  <%= f.select :duration, TokenVote::DURATIONS %>
+  <%= f.select :duration, token_vote_duration_options %>
 
   <%= submit_tag l(:button_activate) %>
   <%= link_to_function l(:button_cancel), '$("#new-token-vote-form").hide();' %>

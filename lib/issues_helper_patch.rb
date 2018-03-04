@@ -17,6 +17,14 @@ module IssuesHelperPatch
     def humanify_amount(amount)
       number_to_human(amount, units: TOKEN_UNITS)
     end
+
+    def token_vote_token_options
+      TokenVote.tokens.keys
+    end
+
+    def token_vote_duration_options
+      TokenVote::DURATIONS
+    end
   end
 end
 

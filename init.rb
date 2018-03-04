@@ -12,6 +12,9 @@ Redmine::Plugin.register :token_voting do
   url 'https://github.com/cryptogopher/token-voting'
   author_url 'https://github.com/cryptogopher'
 
+  menu :account_menu, :token_votes, { controller: 'token_votes', action: 'my' },
+    caption: 'My token votes', first: true
+
   project_module :issue_tracking do
     permission :manage_token_votes, {token_votes: [:create, :destroy]}
   end

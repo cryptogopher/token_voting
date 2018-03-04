@@ -1,0 +1,8 @@
+<%= title l(:label_token_votes) %>
+
+<% if @token_votes_tabs.present? %>
+  <%= render_tabs(@token_votes_tabs) %>
+<% else %>
+  <p class="nodata"><%= l(:label_no_data) %></p>
+<% end %>
+
