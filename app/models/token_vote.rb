@@ -1,5 +1,4 @@
 class TokenVote < ActiveRecord::Base
-  unloadable
 
   class Error < RuntimeError
     def to_s
@@ -73,8 +72,17 @@ class TokenVote < ActiveRecord::Base
   scope :expired, -> { where(integrator: nil).where("expiration <= ?", Time.current) }
   scope :active, -> { where(integrator: nil).where("expiration > ?", Time.current) }
 
-  # resolver hook should only set resolver/integrator user if
-  # resolved/integrated before expiration
+  # Updates resolver/integrator after issue edit
+  def self.issue_edit_hook(issue)
+    issue.token_votes.each do |tv|
+      # Only update token_vote if not expired
+      next if tv.expiration <= Time.current
+
+      # If resolved - set resolver
+      # If closed - set integrator and resolver
+      #if issue.closed
+    end
+  end
 
   def generate_address
     raise Error, 'Re-generating existing address' if self.address

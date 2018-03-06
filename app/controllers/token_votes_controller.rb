@@ -1,5 +1,4 @@
 class TokenVotesController < ApplicationController
-  unloadable
 
   before_filter :authorize, only: [:my]
   before_filter :find_issue, :authorize, only: [:create]
@@ -56,11 +55,10 @@ class TokenVotesController < ApplicationController
   end
 
   MY_TOKEN_VOTES_TABS = [
-    {:name => 'active', :partial => 'token_votes/my/index', :label => :label_active_votes},
-    {:name => 'resolved', :partial => 'token_votes/my/index', :label => :label_resolved_votes},
-    {:name => 'expired', :partial => 'token_votes/my/index', :label => :label_expired_votes},
-    {:name => 'withdrawals', :partial => 'token_votes/my/index',
-     :label => :label_token_withdrawals},
+    {name: 'active', partial: 'token_votes/my/index', label: :label_active_votes},
+    {name: 'resolved', partial: 'token_votes/my/index', label: :label_resolved_votes},
+    {name: 'expired', partial: 'token_votes/my/index', label: :label_expired_votes},
+    {name: 'withdrawals', partial: 'token_votes/my/index', label: :label_token_withdrawals},
   ]
 
   # /my/token_votes
