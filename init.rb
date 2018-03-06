@@ -14,7 +14,7 @@ Redmine::Plugin.register :token_voting do
   url 'https://github.com/cryptogopher/token-voting'
   author_url 'https://github.com/cryptogopher'
 
-  menu :account_menu, :token_votes, { controller: 'token_votes', action: 'my' },
+  menu :account_menu, :token_votes, { controller: 'my', action: 'token_votes' },
     caption: 'My token votes', first: true
 
   project_module :issue_tracking do
@@ -38,5 +38,6 @@ Redmine::Plugin.register :token_voting do
       rpc_uri: 'http://user:password@localhost:18332',
       min_conf: 6,
     },
-  }, partial: 'token_votes/settings'
+  }, partial: 'settings/plugin_token_voting'
 end
+
