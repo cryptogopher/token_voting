@@ -7,6 +7,19 @@ module SettingsControllerPatch
     def token_voting_settings
       return unless request.post? && params[:id] == 'token_voting'
 
+      errors = []
+
+      # Checkpoints checks
+      sum = 0.0
+      params[:settings][:checkpoints].each do |number, values|
+        if values[:statuses].nil? || values[:statuses].empty?
+          errors << "Checkpoint #{number} has to have at least 1 status selected"
+        end
+        sum += values[:share].to_f
+      end
+      errors << "Sum of checkpoint shares has to equal 1.00" unless sum == 1.0
+      
+      # RPC checks
       TokenVote.tokens.keys.each do |token|
         begin
           uri = params[:settings][token][:rpc_uri]
@@ -15,14 +28,15 @@ module SettingsControllerPatch
           rpc.uptime
 
           if params[:settings][token][:min_conf].to_i < 1
-            flash[:error] = "Confirmation threshold for #{token} cannot be < 1"
+            errors << "Confirmation threshold for #{token} has to be 1 or more"
           end
         rescue RPC::Error, URI::Error => e
-          flash[:error] = "Cannot connect to #{uri}: #{e.message}"
+          errors << "Cannot connect to #{token} RPC #{uri}: #{e.message}"
         end
       end
 
-      if flash[:error]
+      if errors.present?
+        flash[:error] = errors.join('<br>').html_safe
         @plugin = Redmine::Plugin.find(params[:id])
         @settings = params[:settings]
         @partial = @plugin.settings[:partial]

@@ -4,6 +4,7 @@ require_dependency 'issue_patch'
 require_dependency 'issues_controller_patch'
 require_dependency 'issues_helper_patch'
 require_dependency 'settings_controller_patch'
+require_dependency 'settings_helper_patch'
 
 Redmine::Plugin.register :token_voting do
   name 'Token voting plugin'
@@ -22,6 +23,9 @@ Redmine::Plugin.register :token_voting do
 
   settings default: {
     default_token: :BTCTEST,
+    checkpoints: [
+      { statuses: IssueStatus.all.where(is_closed: true).pluck(:id), share: 1.0 },
+    ],
     BTC: {
       rpc_uri: 'http://user:password@localhost:8332',
       min_conf: 6,
