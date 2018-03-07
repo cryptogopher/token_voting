@@ -20,16 +20,14 @@ module SettingsControllerPatch
       when 'Add checkpoint'
         count = params[:settings][:checkpoints].length
         params[:settings][:checkpoints][count.to_s] = {statuses: [], share: 0.01}
-        render_token_voting_settings(params)
-        return
+        render_token_voting_settings(params) and return
       when 'Remove checkpoint'
         count = params[:settings][:checkpoints].length
         unless count == 1
           last_key = params[:settings][:checkpoints].keys.sort.last
           params[:settings][:checkpoints].delete(last_key)
         end
-        render_token_voting_settings(params)
-        return
+        render_token_voting_settings(params) and return
       end
 
       # Process settings checks
