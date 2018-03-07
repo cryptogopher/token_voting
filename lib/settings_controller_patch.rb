@@ -3,13 +3,39 @@ module SettingsControllerPatch
     before_filter :token_voting_settings, :only => [:plugin]
 
     private
+
+    def render_token_voting_settings(params)
+      @plugin = Redmine::Plugin.find(params[:id])
+      @settings = params[:settings]
+      @partial = @plugin.settings[:partial]
+      render
+    end
+
     # validate settings on POST, before saving
     def token_voting_settings
       return unless request.post? && params[:id] == 'token_voting'
 
+      # Process checkpoint adding/removal
+      case params[:commit]
+      when 'Add checkpoint'
+        count = params[:settings][:checkpoints].length
+        params[:settings][:checkpoints][count.to_s] = {statuses: [], share: 0.01}
+        render_token_voting_settings(params)
+        return
+      when 'Remove checkpoint'
+        count = params[:settings][:checkpoints].length
+        unless count == 1
+          last_key = params[:settings][:checkpoints].keys.sort.last
+          params[:settings][:checkpoints].delete(last_key)
+        end
+        render_token_voting_settings(params)
+        return
+      end
+
+      # Process settings checks
       errors = []
 
-      # Checkpoints checks
+      # - checkpoints checks
       sum = 0.0
       params[:settings][:checkpoints].each do |number, values|
         if values[:statuses].nil? || values[:statuses].empty?
@@ -19,7 +45,7 @@ module SettingsControllerPatch
       end
       errors << "Sum of checkpoint shares has to equal 1.00" unless sum == 1.0
       
-      # RPC checks
+      # - RPC checks
       TokenVote.tokens.keys.each do |token|
         begin
           uri = params[:settings][token][:rpc_uri]
@@ -37,10 +63,7 @@ module SettingsControllerPatch
 
       if errors.present?
         flash[:error] = errors.join('<br>').html_safe
-        @plugin = Redmine::Plugin.find(params[:id])
-        @settings = params[:settings]
-        @partial = @plugin.settings[:partial]
-        render
+        render_token_voting_settings(params)
       end
     rescue Redmine::PluginNotFound
       render_404

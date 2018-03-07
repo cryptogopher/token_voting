@@ -23,9 +23,9 @@ Redmine::Plugin.register :token_voting do
 
   settings default: {
     default_token: :BTCTEST,
-    checkpoints: [
-      { statuses: IssueStatus.all.where(is_closed: true).pluck(:id), share: 1.0 },
-    ],
+    checkpoints: {
+      '0' => { statuses: IssueStatus.all.where(is_closed: true).pluck(:id), share: 1.0 },
+    },
     BTC: {
       rpc_uri: 'http://user:password@localhost:8332',
       min_conf: 6,
@@ -38,6 +38,6 @@ Redmine::Plugin.register :token_voting do
       rpc_uri: 'http://user:password@localhost:18332',
       min_conf: 6,
     },
-  }, partial: 'settings/plugin_token_voting'
+  }, partial: 'settings/token_votes'
 end
 

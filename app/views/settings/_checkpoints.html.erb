@@ -1,0 +1,20 @@
+<% @settings[:checkpoints].keys.sort.each do |number| %>
+  <p>
+    <%= label_tag :settings_checkpoints_statuses,
+      "Checkpoint #{number.to_i + 1} status(es)" %>
+    <%= select_tag "settings[checkpoints][#{number}][statuses]",
+      options_for_checkpoint_statuses(@settings[:checkpoints][number.to_s][:statuses]),
+      multiple: true %>
+  </p>
+  <p>
+    <%= label_tag :settings_checkpoints_share,
+      "Checkpoint #{number.to_i + 1} share" %>
+    <%= number_field_tag "settings[checkpoints][#{number}][share]",
+      @settings[:checkpoints][number.to_s][:share], in: 0.01..1, step: 0.01 %>
+  </p>
+<% end %>
+<p>
+  <%= submit_tag 'Add checkpoint', class: 'icon icon-add' %>
+  <%= submit_tag 'Remove checkpoint', class: 'icon icon-del' %>
+</p>
+
