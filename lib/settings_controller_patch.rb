@@ -15,34 +15,39 @@ module SettingsControllerPatch
     def token_voting_settings
       return unless request.post? && params[:id] == 'token_voting'
 
-      # Process checkpoint adding/removal
-      case params[:commit]
-      when 'Add checkpoint'
-        count = params[:settings][:checkpoints].length
-        params[:settings][:checkpoints][count.to_s] = {statuses: [], share: 0.01}
-        render_token_voting_settings(params) and return
-      when 'Remove checkpoint'
-        count = params[:settings][:checkpoints].length
-        unless count == 1
-          last_key = params[:settings][:checkpoints].keys.sort.last
-          params[:settings][:checkpoints].delete(last_key)
-        end
-        render_token_voting_settings(params) and return
-      end
+      # Statuses from each multiple-select have appended '' from hidden input
+      unsplit = params[:settings][:checkpoints][:statuses][0...-1]
+      params[:settings][:checkpoints][:statuses] = unsplit.split('')
 
       # Process settings checks
       errors = []
 
       # - checkpoints checks
-      sum = 0.0
-      params[:settings][:checkpoints].each do |number, values|
-        if values[:statuses].nil? || values[:statuses].empty?
-          errors << "Checkpoint #{number} has to have at least 1 status selected"
-        end
-        sum += values[:share].to_f
+      statuses = params[:settings][:checkpoints][:statuses]
+      shares = params[:settings][:checkpoints][:shares]
+
+      if statuses.size != shares.size
+        errors << "Checkpoint data invalid: different # of statuses and shares"
       end
-      errors << "Sum of checkpoint shares has to equal 1.00" unless sum == 1.0
+
+      statuses.each_with_index do |values, index|
+        if values.nil? || values.empty?
+          errors << "Checkpoint #{index+1} has to have at least 1 status selected"
+        end
+      end
       
+      shares.each_with_index do |value, index|
+        if value.nil? || value.empty?
+          errors << "Checkpoint #{index+1} share is not set"
+        elsif value.to_f < 0.01 || value.to_f > 1.0
+          errors << "Checkpoint #{index+1} has share outside defined range 0.01 - 1.0"
+        end
+      end
+
+      if shares.reduce(0) { |sum, a| sum += a.to_f } != 1.0
+        errors << "Sum of checkpoint shares has to equal 1.0"
+      end
+
       # - RPC checks
       TokenVote.tokens.keys.each do |token|
         begin
