@@ -10,9 +10,7 @@
   <tbody>
     <% @settings[:checkpoints][:statuses].each_with_index do |statuses, index| %>
       <tr class="checkpoint-details">
-        <td>
-          <%= index + 1 %>
-        </td>
+        <td class="checkpoint-number"></td>
         <td>
           <%= select_tag "settings[checkpoints][statuses][]",
             options_for_checkpoint_statuses(@settings[:checkpoints][:statuses][index]),
@@ -28,10 +26,7 @@
         </td>
       </tr>
     <% end %>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td class="buttons">
+    <td colspan="4" class="buttons">
       <%= link_to image_tag('add.png'), '#', :class => 'add-checkpoint-details' %>
     </td>
   </tbody>

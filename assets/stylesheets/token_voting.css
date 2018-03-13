@@ -1,2 +1,13 @@
 .icon-qrcode { background-image: url(../images/qrcode16.png); }
 
+/* Settings -> Checkpoints table row numbering */
+#checkpoints {
+  counter-reset: rowNumber;
+}
+.checkpoint-details {
+  counter-increment: rowNumber;
+}
+.checkpoint-number::before {
+  content: counter(rowNumber);
+}
+
