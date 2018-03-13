@@ -60,27 +60,36 @@ class TokenVote < ActiveRecord::Base
     self.visible? && !self.funded?
   end
 
-  def resolved?
-    self.integrator != nil
+  def completed?
+    self.completed
   end
 
   def expired?
-    self.expiration <= Time.current && !self.resolved?
+    self.expiration <= Time.current && !self.completed?
   end
 
-  scope :resolved, -> { where.not(integrator: nil) }
-  scope :expired, -> { where(integrator: nil).where("expiration <= ?", Time.current) }
-  scope :active, -> { where(integrator: nil).where("expiration > ?", Time.current) }
+  scope :completed, -> { where(completed: true) }
+  scope :expired, -> { where(completed: false).where("expiration <= ?", Time.current) }
+  scope :active, -> { where(completed: false).where("expiration > ?", Time.current) }
 
-  # Updates resolver/integrator after issue edit
-  def self.issue_edit_hook(issue)
+  # Updates 'completed' after issue edit
+  def self.issue_edit_hook(issue, journal)
+    detail = journal.details.where(prop_key: 'status_id').pluck(:old_value, :value)
+    old_status, new_status = detail.first if detail
+    was_completed = is_status_completed(old_status)
+    is_completed = is_status_completed(new_status)
+
+    # Only update token_vote if:
+    # - issue's checkpoint changed from/to final checkpoint
+    return if was_completed == is_completed
+    # - token_vote did not expire
+    # - token_vote expired but status changes from completed to not-completed
     issue.token_votes.each do |tv|
-      # Only update token_vote if not expired
-      next if tv.expiration <= Time.current
-
-      # If resolved - set resolver
-      # If closed - set integrator and resolver
-      #if issue.closed
+      if tv.expiration > Time.current
+        self.completed = is_completed
+      elsif is_completed == false
+        self.completed = false
+      end
     end
   end
 
@@ -153,7 +162,12 @@ class TokenVote < ActiveRecord::Base
       self.token ||= Setting.plugin_token_voting[:default_token]
       self.amount_conf ||= 0
       self.amount_unconf ||= 0
+      self.completed ||= false
     end
+  end
+
+  def is_status_completed?(status)
+    Setting.plugin_token_voting[:checkpoints][:statuses].last.include?(status)
   end
 end
 
