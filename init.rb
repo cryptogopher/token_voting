@@ -5,6 +5,9 @@ require_dependency 'issues_controller_patch'
 require_dependency 'issues_helper_patch'
 require_dependency 'settings_controller_patch'
 require_dependency 'settings_helper_patch'
+require_dependency 'my_controller_patch'
+
+MyController.include MyControllerPatch
 
 Redmine::Plugin.register :token_voting do
   name 'Token voting plugin'

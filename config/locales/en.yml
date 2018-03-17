@@ -3,7 +3,7 @@ en:
   label_token_votes: "Token votes"
   label_your_votes: "Your votes"
   label_active_votes: "Active votes"
-  label_resolved_votes: "Resolved votes"
+  label_completed_votes: "Completed votes"
   label_expired_votes: "Expired votes"
   label_token_withdrawals: "Token withdrawals"
 

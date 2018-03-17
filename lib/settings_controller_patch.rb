@@ -75,3 +75,4 @@ module SettingsControllerPatch
 end
 
 SettingsController.include SettingsControllerPatch
+

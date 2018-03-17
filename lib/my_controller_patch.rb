@@ -8,7 +8,6 @@ module MyControllerPatch
     ]
 
     def token_votes
-      puts 'dupa'
       @token_votes = Hash.new([])
       [:active, :completed, :expired].each do |status|
         @token_votes[status.to_s] = TokenVote.where(voter: User.current).send(status)

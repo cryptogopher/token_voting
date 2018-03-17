@@ -77,7 +77,7 @@ class TokenVote < ActiveRecord::Base
     detail = journal.details.where(prop_key: 'status_id').pluck(:old_value, :value)
     previous_status, current_status = detail.first if detail
     previously_completed = is_status_completed(previous_status)
-    currenlty_completed = is_status_completed(current_status)
+    currently_completed = is_status_completed(current_status)
 
     # Only update token_vote if:
     # - issue's checkpoint _changed_ from/to final checkpoint
@@ -87,7 +87,7 @@ class TokenVote < ActiveRecord::Base
     issue.token_votes.each do |tv|
       if tv.expiration > Time.current
         self.is_completed = currently_completed
-      elsif currenlty_completed == false
+      elsif currently_completed == false
         self.is_completed = false
       end
       tv.save
@@ -163,7 +163,7 @@ class TokenVote < ActiveRecord::Base
       self.token ||= Setting.plugin_token_voting[:default_token]
       self.amount_conf ||= 0
       self.amount_unconf ||= 0
-      self.completed ||= false
+      self.is_completed ||= false
     end
   end
 
