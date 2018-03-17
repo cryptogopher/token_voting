@@ -1,13 +1,16 @@
-require_dependency 'token_votes_view_listener'
-require_dependency 'token_votes_listener'
-require_dependency 'issue_patch'
-require_dependency 'issues_controller_patch'
-require_dependency 'issues_helper_patch'
-require_dependency 'settings_controller_patch'
-require_dependency 'settings_helper_patch'
-require_dependency 'my_controller_patch'
+require_dependency 'token_voting/token_votes_view_listener'
+require_dependency 'token_voting/token_votes_listener'
 
-MyController.include MyControllerPatch
+ActionDispatch::Reloader.to_prepare do
+  Issue.include TokenVoting::IssuePatch
+  IssuesController.include TokenVoting::IssuesControllerPatch
+  IssuesHelper.include TokenVoting::IssuesHelperPatch
+
+  MyController.include TokenVoting::MyControllerPatch
+
+  SettingsController.include TokenVoting::SettingsControllerPatch
+  SettingsHelper.include TokenVoting::SettingsHelperPatch
+end
 
 Redmine::Plugin.register :token_voting do
   name 'Token voting plugin'
