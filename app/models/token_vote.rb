@@ -61,35 +61,36 @@ class TokenVote < ActiveRecord::Base
   end
 
   def completed?
-    self.completed
+    self.is_completed
   end
 
   def expired?
     self.expiration <= Time.current && !self.completed?
   end
 
-  scope :completed, -> { where(completed: true) }
-  scope :expired, -> { where(completed: false).where("expiration <= ?", Time.current) }
-  scope :active, -> { where(completed: false).where("expiration > ?", Time.current) }
+  scope :active, -> { where(is_completed: false).where("expiration > ?", Time.current) }
+  scope :completed, -> { where(is_completed: true) }
+  scope :expired, -> { where(is_completed: false).where("expiration <= ?", Time.current) }
 
-  # Updates 'completed' after issue edit
+  # Updates 'is_completed' after issue edit
   def self.issue_edit_hook(issue, journal)
     detail = journal.details.where(prop_key: 'status_id').pluck(:old_value, :value)
-    old_status, new_status = detail.first if detail
-    was_completed = is_status_completed(old_status)
-    is_completed = is_status_completed(new_status)
+    previous_status, current_status = detail.first if detail
+    previously_completed = is_status_completed(previous_status)
+    currenlty_completed = is_status_completed(current_status)
 
     # Only update token_vote if:
-    # - issue's checkpoint changed from/to final checkpoint
-    return if was_completed == is_completed
+    # - issue's checkpoint _changed_ from/to final checkpoint
+    return if previously_completed == currently_completed
     # - token_vote did not expire
     # - token_vote expired but status changes from completed to not-completed
     issue.token_votes.each do |tv|
       if tv.expiration > Time.current
-        self.completed = is_completed
-      elsif is_completed == false
-        self.completed = false
+        self.is_completed = currently_completed
+      elsif currenlty_completed == false
+        self.is_completed = false
       end
+      tv.save
     end
   end
 
