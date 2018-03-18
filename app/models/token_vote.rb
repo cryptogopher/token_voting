@@ -8,8 +8,6 @@ class TokenVote < ActiveRecord::Base
 
   belongs_to :issue
   belongs_to :voter, class_name: 'User'
-  belongs_to :resolver, class_name: 'User'
-  belongs_to :integrator, class_name: 'User'
 
   DURATIONS = {
     "1 week" => 1.week,
@@ -33,11 +31,11 @@ class TokenVote < ActiveRecord::Base
   #enum status: [:requested, :unconfirmed, :confirmed, :resolved, :expired, :refunded]
 
   validates :voter, :issue, presence: true, associated: true
-  validates :resolver, :integrator, associated: true
   validates :duration, inclusion: { in: DURATIONS.values }
   validates :expiration, :address, presence: true
   validates :token, inclusion: { in: tokens.keys }
-  validates :amount_conf, :amount_unconf, numericality: { grater_than_or_equal_to: 0 }
+  validates :amount_conf, numericality: { grater_than_or_equal_to: 0 }
+  validates :amount_unconf, numericality: true
 
   after_initialize :set_defaults
 
