@@ -1,8 +1,8 @@
 class CreateTokenVotes < ActiveRecord::Migration
   def change
     create_table :token_votes do |t|
-      t.references :user
-      t.references :issue
+      t.references :user, foreign: true, index: true
+      t.references :issue, foreign: true, index: true
       t.integer :duration
       t.datetime :expiration
       t.string :address
@@ -11,8 +11,6 @@ class CreateTokenVotes < ActiveRecord::Migration
       t.string :refund_txid
       t.integer :token
       t.decimal :amount, precision: 20, scale: 10
-
-      t.timestamps null: false
     end
   end
 end

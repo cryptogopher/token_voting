@@ -70,25 +70,56 @@ class TokenVote < ActiveRecord::Base
   scope :completed, -> { where(is_completed: true) }
   scope :expired, -> { where(is_completed: false).where("expiration <= ?", Time.current) }
 
-  # Updates 'is_completed' after issue edit
+  # Updates 'is_completed' after issue edit and computes payouts on completion
   def self.issue_edit_hook(issue, journal)
     detail = journal.details.where(prop_key: 'status_id').pluck(:old_value, :value)
-    previous_status, current_status = detail.first if detail
-    previously_completed = is_status_completed(previous_status)
-    currently_completed = is_status_completed(current_status)
+    prev_issue_status, curr_issue_status = detail.first if detail
+    issue_prev_completed = is_issue_completed(prev_issue_status)
+    issue_curr_completed = is_issue_completed(curr_issue_status)
 
     # Only update token_vote if:
     # - issue's checkpoint _changed_ from/to final checkpoint
-    return if previously_completed == currently_completed
+    return if issue_prev_completed == issue_curr_completed
     # - token_vote did not expire
     # - token_vote expired but status changes from completed to not-completed
     issue.token_votes.each do |tv|
       if tv.expiration > Time.current
-        self.is_completed = currently_completed
-      elsif currently_completed == false
+        self.is_completed = issue_curr_completed
+      elsif issue_curr_completed == false
         self.is_completed = false
       end
       tv.save
+    end
+
+    if issue_curr_completed == true
+      status_history = issue.journal_details
+        .where(prop_key: 'status_id')
+        .order('journals.created_on DESC')
+        .pluck('journals.user_id', 'journal_details.value')
+
+      payouts = Hash.new(0)
+      checkpoints = Setting.plugin_token_voting[:checkpoints][:statuses]
+        .zip(Setting.plugin_token_voting[:checkpoints][:shares])
+        .reverse
+      checkpoints.each do |statuses, share|
+        current_user, current_status = status_history[0]
+        if statuses.include?(current_status)
+          payouts[current_user] += share
+          status_history.shift
+        end
+      end
+
+      total_amount_per_token = issue.token_votes.completed.group(:token).sum(:amount_conf)
+
+      payouts.each do |user, share|
+        total_amount_per_token.each do |token, amount|
+          # FIXME: potential rounding errors - sum of amounts should equal sum of payouts
+          tp = TokenPayout.new(issue: issue, user: user, token: token, amount: share*amount)
+          tp.save
+        end
+      end
+    else
+      issue.token_payouts.delete_all
     end
   end
 
@@ -165,7 +196,7 @@ class TokenVote < ActiveRecord::Base
     end
   end
 
-  def is_status_completed?(status)
+  def is_issue_completed?(status)
     Setting.plugin_token_voting[:checkpoints][:statuses].last.include?(status)
   end
 end
