@@ -74,8 +74,8 @@ class TokenVote < ActiveRecord::Base
   def self.issue_edit_hook(issue, journal)
     detail = journal.details.where(prop_key: 'status_id').pluck(:old_value, :value)
     prev_issue_status, curr_issue_status = detail.first if detail
-    issue_prev_completed = is_issue_completed(prev_issue_status)
-    issue_curr_completed = is_issue_completed(curr_issue_status)
+    issue_prev_completed = is_issue_completed?(prev_issue_status)
+    issue_curr_completed = is_issue_completed?(curr_issue_status)
 
     # Only update token_vote if:
     # - issue's checkpoint _changed_ from/to final checkpoint
@@ -98,8 +98,8 @@ class TokenVote < ActiveRecord::Base
         .pluck('journals.user_id', 'journal_details.value')
 
       payouts = Hash.new(0)
-      checkpoints = Setting.plugin_token_voting[:checkpoints][:statuses]
-        .zip(Setting.plugin_token_voting[:checkpoints][:shares])
+      checkpoints = Setting.plugin_token_voting['checkpoints']['statuses']
+        .zip(Setting.plugin_token_voting['checkpoints']['shares'])
         .reverse
       checkpoints.each do |statuses, share|
         current_user, current_status = status_history[0]
@@ -138,7 +138,7 @@ class TokenVote < ActiveRecord::Base
 
   def update_amounts
     rpc = RPC.get_rpc(self.token)
-    minimum_conf = Setting.plugin_token_voting[self.token.to_sym][:min_conf].to_i
+    minimum_conf = Setting.plugin_token_voting[self.token]['min_conf'].to_i
     self.amount_conf = 
       rpc.get_received_by_address(self.address, minimum_conf)
     self.amount_unconf = 
@@ -189,15 +189,15 @@ class TokenVote < ActiveRecord::Base
   def set_defaults
     if new_record?
       self.duration ||= 1.month
-      self.token ||= Setting.plugin_token_voting[:default_token]
+      self.token ||= Setting.plugin_token_voting['default_token']
       self.amount_conf ||= 0
       self.amount_unconf ||= 0
       self.is_completed ||= false
     end
   end
 
-  def is_issue_completed?(status)
-    Setting.plugin_token_voting[:checkpoints][:statuses].last.include?(status)
+  def self.is_issue_completed?(status)
+    Setting.plugin_token_voting['checkpoints']['statuses'].last.include?(status)
   end
 end
 

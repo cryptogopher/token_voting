@@ -1,0 +1,24 @@
+DEFAULTS: &DEFAULTS
+  admin: false
+  type: User
+
+alice:
+  login: alice
+  <<: *DEFAULTS
+
+bob:
+  login: bob
+  <<: *DEFAULTS
+
+charlie:
+  login: charlie
+  <<: *DEFAULTS
+
+dave:
+  login: dave
+  <<: *DEFAULTS
+
+gopher:
+  login: gopher
+  <<: *DEFAULTS
+

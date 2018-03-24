@@ -1,18 +1,12 @@
----
-issues_001:
-  created_on: <%= 5.days.ago.to_s(:db) %>
-  project_id: 2
-  updated_on: <%= 2.days.ago.to_s(:db) %>
-  priority_id: 4
-  subject: Issue on project 2
-  id: 4
-  fixed_version_id:
-  category_id:
-  description: Issue on project 2
+DEFAULTS: &DEFAULTS
+  project_id: 1
   tracker_id: 1
-  assigned_to_id: 2
-  author_id: 2
-  status_id: 1
-  root_id: 4
-  lft: 1
-  rgt: 2
+  priority_id: 3
+
+issue_01:
+  subject: 2 checkpoints, forward processing
+  assigned_to: alice
+  author: bob
+  status: closed
+  <<: *DEFAULTS
+

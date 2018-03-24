@@ -1,7 +1,7 @@
 <p>
   <%= label_tag :settings_default_token, 'Default token' %>
   <%= select_tag 'settings[default_token]',
-    options_for_select(TokenVote.tokens.keys, @settings[:default_token]) %>
+    options_for_select(TokenVote.tokens.keys, @settings['default_token']) %>
 </p>
 </div>
 
@@ -14,14 +14,14 @@
 <legend>BTC</legend>
   <p>
     <%= label_tag :settings_btc_rpc_uri, 'RPC URI' %>
-    <%= text_field_tag 'settings[BTC][rpc_uri]', @settings[:BTC][:rpc_uri], size: 64 %>
+    <%= text_field_tag 'settings[BTC][rpc_uri]', @settings['BTC']['rpc_uri'], size: 64 %>
     <em class="info">
       <%= l(:label_default) %>: <%= @plugin.settings[:default][:BTC][:rpc_uri] %>
     </em>
   </p>
   <p>
     <%= label_tag :settings_btc_min_conf, 'Minimum confirmations' %>
-    <%= number_field_tag 'settings[BTC][min_conf]', @settings[:BTC][:min_conf],
+    <%= number_field_tag 'settings[BTC][min_conf]', @settings['BTC']['min_conf'],
       min: 1, size: 2 %>
     <em class="info">
       <%= l(:label_default) %>: <%= @plugin.settings[:default][:BTC][:min_conf] %>
@@ -33,14 +33,14 @@
 <legend>BCH</legend>
   <p>
     <%= label_tag :settings_bch_rpc_uri, 'RPC URI' %>
-    <%= text_field_tag 'settings[BCH][rpc_uri]', @settings[:BCH][:rpc_uri], size: 64 %>
+    <%= text_field_tag 'settings[BCH][rpc_uri]', @settings['BCH']['rpc_uri'], size: 64 %>
     <em class="info">
       <%= l(:label_default) %>: <%= @plugin.settings[:default][:BCH][:rpc_uri] %>
     </em>
   </p>
   <p>
     <%= label_tag :settings_bch_min_conf, 'Minimum confirmations' %>
-    <%= number_field_tag 'settings[BCH][min_conf]', @settings[:BCH][:min_conf],
+    <%= number_field_tag 'settings[BCH][min_conf]', @settings['BCH']['min_conf'],
       min: 1, size: 2 %>
     <em class="info">
       <%= l(:label_default) %>: <%= @plugin.settings[:default][:BCH][:min_conf] %>
@@ -52,7 +52,7 @@
 <legend>BTC testnet (BTCTEST)</legend>
   <p>
     <%= label_tag :settings_btctest_rpc_uri, 'RPC URI' %>
-    <%= text_field_tag 'settings[BTCTEST][rpc_uri]', @settings[:BTCTEST][:rpc_uri],
+    <%= text_field_tag 'settings[BTCTEST][rpc_uri]', @settings['BTCTEST']['rpc_uri'],
       size: 64 %>
     <em class="info">
       <%= l(:label_default) %>: <%= @plugin.settings[:default][:BTCTEST][:rpc_uri] %>
@@ -60,7 +60,7 @@
   </p>
   <p>
     <%= label_tag :settings_btctest_min_conf, 'Minimum confirmations' %>
-    <%= number_field_tag 'settings[BTCTEST][min_conf]', @settings[:BTCTEST][:min_conf],
+    <%= number_field_tag 'settings[BTCTEST][min_conf]', @settings['BTCTEST']['min_conf'],
       min: 1, size: 2 %>
     <em class="info">
       <%= l(:label_default) %>: <%= @plugin.settings[:default][:BTCTEST][:min_conf] %>

@@ -8,18 +8,18 @@
     </tr>
   </thead>
   <tbody>
-    <% @settings[:checkpoints][:statuses].each_with_index do |statuses, index| %>
+    <% @settings['checkpoints']['statuses'].each_with_index do |statuses, index| %>
       <tr class="checkpoint-details">
         <td class="checkpoint-number"></td>
         <td>
           <%= select_tag "settings[checkpoints][statuses][]",
-            options_for_checkpoint_statuses(@settings[:checkpoints][:statuses][index]),
+            options_for_checkpoint_statuses(@settings['checkpoints']['statuses'][index]),
             multiple: true %>
           <%= hidden_field_tag "settings[checkpoints][statuses][]" %>
         </td>
         <td>
           <%= number_field_tag "settings[checkpoints][shares][]",
-            @settings[:checkpoints][:shares][index], in: 0.01..1, step: 0.01 %>
+            @settings['checkpoints']['shares'][index], in: 0.01..1, step: 0.01 %>
         </td>
         <td class="buttons">
           <%= link_to image_tag('delete.png'), '#', :class => 'delete-checkpoint-details' %>
