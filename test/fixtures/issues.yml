@@ -4,9 +4,9 @@ DEFAULTS: &DEFAULTS
   priority_id: 3
 
 issue_01:
-  subject: 2 checkpoints, forward processing
+  subject: Issue
   assigned_to: alice
   author: bob
-  status: closed
+  status: new
   <<: *DEFAULTS
 
