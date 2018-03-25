@@ -2,8 +2,7 @@ require File.expand_path('../../test_helper', __FILE__)
 
 class TokenVoteTest < ActiveSupport::TestCase
   fixtures :issues, :issue_statuses, :users, :token_votes, :token_payouts,
-    :journals, :journal_details,
-    :trackers, :projects
+    :journals, :journal_details, :trackers, :projects
 
   def setup
     Setting['plugin_token_voting'] = {

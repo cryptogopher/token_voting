@@ -94,19 +94,31 @@ class TokenVote < ActiveRecord::Base
     if issue_curr_completed == true
       status_history = issue.journal_details
         .where(prop_key: 'status_id')
-        .order('journals.created_on DESC')
+        .order('journals.created_on ASC')
         .pluck('journals.user_id', 'journal_details.value')
 
-      payouts = Hash.new(0)
-      checkpoints = Setting.plugin_token_voting['checkpoints']['statuses']
-        .zip(Setting.plugin_token_voting['checkpoints']['shares'])
-        .reverse
-      checkpoints.each do |statuses, share|
-        current_user, current_status = status_history[0]
-        if statuses.include?(current_status)
-          payouts[current_user] += share
-          status_history.shift
+      shares = Setting.plugin_token_voting['checkpoints']['shares']
+      checkpoints = Hash.new(0)
+      Setting.plugin_token_voting['checkpoints']['statuses']
+        .each_with_index.map do |statuses, checkp_index|
+          statuses.map do |status|
+            checkpoints[status] = checkp_index + 1
+          end
         end
+
+      payees = Array.new(shares.count) 
+      prev_checkpoint = 0
+      status_history.each do |user, status|
+        curr_checkpoint = checkpoints[status]
+        if curr_checkpoint > prev_checkpoint
+          payees.fill(user, prev_checkpoint...curr_checkpoint)
+        end
+        prev_checkpoint = curr_checkpoint
+      end
+
+      payouts = Hash.new(0)
+      payees.each_with_index do |payee, index|
+        payouts[payee] += shares[index]
       end
 
       total_amount_per_token = issue.token_votes.completed.group(:token).sum(:amount_conf)
