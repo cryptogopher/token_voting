@@ -6,4 +6,8 @@ en:
   label_completed_votes: "Completed votes"
   label_expired_votes: "Expired votes"
   label_token_withdrawals: "Token withdrawals"
+  activerecord:
+    attributes:
+      token_vote:
+        address: 'Address'
 

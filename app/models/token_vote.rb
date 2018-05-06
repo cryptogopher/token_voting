@@ -27,7 +27,7 @@ class TokenVote < ActiveRecord::Base
     "6 months" => 6.months,
   }
 
-  enum token: {BTC: 0, BCH: 1, BTCTEST: 1000}
+  enum token: {BTC: 0, BCH: 1, BTCTEST: 1000, BTCREG: 2000}
   #enum status: [:requested, :unconfirmed, :confirmed, :resolved, :expired, :refunded]
 
   validates :voter, :issue, presence: true, associated: true
@@ -84,9 +84,9 @@ class TokenVote < ActiveRecord::Base
     # - token_vote expired but status changes from completed to not-completed
     issue.token_votes.each do |tv|
       if tv.expiration > Time.current
-        self.is_completed = issue_curr_completed
+        tv.is_completed = issue_curr_completed
       elsif issue_curr_completed == false
-        self.is_completed = false
+        tv.is_completed = false
       end
       tv.save
     end
@@ -97,36 +97,38 @@ class TokenVote < ActiveRecord::Base
         .order('journals.created_on ASC')
         .pluck('journals.user_id', 'journal_details.value')
 
-      shares = Setting.plugin_token_voting['checkpoints']['shares']
+      shares = Setting.plugin_token_voting['checkpoints']['shares'].map {|s| s.to_f}
+      statuses = Setting.plugin_token_voting['checkpoints']['statuses']
+
       checkpoints = Hash.new(0)
-      Setting.plugin_token_voting['checkpoints']['statuses']
-        .each_with_index.map do |statuses, checkp_index|
-          statuses.map do |status|
-            checkpoints[status] = checkp_index + 1
-          end
+      statuses.each_with_index.map do |checkp_statuses, checkp_index|
+        checkp_statuses.map do |status|
+          checkpoints[status] = checkp_index + 1
         end
+      end
 
       payees = Array.new(shares.count) 
       prev_checkpoint = 0
-      status_history.each do |user, status|
+      status_history.each do |user_id, status|
         curr_checkpoint = checkpoints[status]
         if curr_checkpoint > prev_checkpoint
-          payees.fill(user, prev_checkpoint...curr_checkpoint)
+          payees.fill(user_id, prev_checkpoint...curr_checkpoint)
         end
         prev_checkpoint = curr_checkpoint
       end
 
       payouts = Hash.new(0)
-      payees.each_with_index do |payee, index|
-        payouts[payee] += shares[index]
+      payees.each_with_index do |payee, checkpoint| 
+        payouts[payee] += shares[checkpoint] if shares[checkpoint] > 0
       end
 
       total_amount_per_token = issue.token_votes.completed.group(:token).sum(:amount_conf)
 
-      payouts.each do |user, share|
+      payouts.each do |user_id, share|
         total_amount_per_token.each do |token, amount|
           # FIXME: potential rounding errors - sum of amounts should equal sum of payouts
-          tp = TokenPayout.new(issue: issue, user: user, token: token, amount: share*amount)
+          tp = TokenPayout.new(issue: issue, payee: User.find(user_id), token: token,
+                               amount: share*amount)
           tp.save
         end
       end

@@ -1,24 +1,26 @@
 DEFAULTS: &DEFAULTS
+  login: $LABEL
+  hashed_password: b5b6ff9543bf1387374cdfa27a54c96d236a7150
+  firstname: $LABEL
+  lastname: $LABEL
   admin: false
+  status: true
   type: User
+  mail_notification: ''
+  must_change_passwd: false
 
 alice:
-  login: alice
   <<: *DEFAULTS
 
 bob:
-  login: bob
   <<: *DEFAULTS
 
 charlie:
-  login: charlie
   <<: *DEFAULTS
 
 dave:
-  login: dave
   <<: *DEFAULTS
 
 gopher:
-  login: gopher
   <<: *DEFAULTS
 
