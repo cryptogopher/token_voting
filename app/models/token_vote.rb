@@ -117,7 +117,7 @@ class TokenVote < ActiveRecord::Base
         prev_checkpoint = curr_checkpoint
       end
 
-      payouts = Hash.new(0)
+      payouts = Hash.new(BigDecimal.new(0))
       payees.each_with_index do |payee, checkpoint| 
         payouts[payee] += shares[checkpoint] if shares[checkpoint] > 0
       end
