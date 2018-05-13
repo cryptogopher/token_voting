@@ -92,9 +92,10 @@ class TokenVote < ActiveRecord::Base
     end
 
     if issue_curr_completed == true
+      # Ordering by journals.created_on is unreliable, as it has 1sec precision
       status_history = issue.journal_details
         .where(prop_key: 'status_id')
-        .order('journals.created_on ASC')
+        .order('journals.id ASC')
         .pluck('journals.user_id', 'journal_details.value')
 
       shares = Setting.plugin_token_voting['checkpoints']['shares'].map {|s| s.to_f}
@@ -102,12 +103,11 @@ class TokenVote < ActiveRecord::Base
 
       checkpoints = Hash.new(0)
       statuses.each_with_index.map do |checkp_statuses, checkp_index|
-        checkp_statuses.map do |status|
-          checkpoints[status] = checkp_index + 1
-        end
+        checkp_statuses.map { |status| checkpoints[status] = checkp_index + 1 }
       end
 
       payees = Array.new(shares.count) 
+      # Checkpoint numbers are 1 based
       prev_checkpoint = 0
       status_history.each do |user_id, status|
         curr_checkpoint = checkpoints[status]
