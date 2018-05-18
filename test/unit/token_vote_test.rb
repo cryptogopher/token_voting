@@ -6,23 +6,7 @@ class TokenVoteTest < ActiveSupport::TestCase
     :journals, :journal_details
 
   def setup
-    Setting.plugin_token_voting = {
-      'default_token' => 'BTCREG',
-      'BTCREG' => {
-        'rpc_uri' => 'http://regtest:7nluWvQfpWTewrCXpChUkoRShigXs29H@172.17.0.1:10482',
-        'min_conf' => '6'
-      },
-      'BTCTEST' => {
-        'rpc_uri' => 'http://regtest:7nluWvQfpWTewrCXpChUkoRShigXs29H@172.17.0.1:10482',
-        'min_conf' => '6'
-      },
-      'checkpoints' => {
-        'statuses' => [[issue_statuses(:resolved).id.to_s],
-                     [issue_statuses(:pulled).id.to_s],
-                     [issue_statuses(:closed).id.to_s]],
-        'shares' => ['0.7', '0.2', '0.1']
-      }
-    }
+    default_plugin_settings
   end
 
   def test_forward_stepwise_processing_payouts

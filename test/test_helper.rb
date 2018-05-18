@@ -10,8 +10,33 @@ ActiveRecord::FixtureSet.create_fixtures(File.dirname(__FILE__) + '/fixtures/',
     :token_votes,
     :token_payouts,
     :journals,
-    :journal_details
+    :journal_details,
+    :projects,
+    :roles,
+    :members,
+    :member_roles,
+    :enabled_modules
   ])
+
+def default_plugin_settings
+  Setting.plugin_token_voting = {
+    'default_token' => 'BTCREG',
+    'BTCREG' => {
+      'rpc_uri' => 'http://regtest:7nluWvQfpWTewrCXpChUkoRShigXs29H@172.17.0.1:10482',
+      'min_conf' => '6'
+    },
+    'BTCTEST' => {
+      'rpc_uri' => 'http://regtest:7nluWvQfpWTewrCXpChUkoRShigXs29H@172.17.0.1:10482',
+      'min_conf' => '6'
+    },
+    'checkpoints' => {
+      'statuses' => [[issue_statuses(:resolved).id.to_s],
+                     [issue_statuses(:pulled).id.to_s],
+                     [issue_statuses(:closed).id.to_s]],
+    'shares' => ['0.7', '0.2', '0.1']
+    }
+  }
+end
 
 def update_issue_status(issue, user, status, &block)
   with_current_user user do

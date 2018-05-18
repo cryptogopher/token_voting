@@ -1,0 +1,6 @@
+project_01:
+  name: Token voting
+  description: Sample token voting project
+  homepage: http://tv.michalczyk.pro/
+  is_public: true
+  identifier: tokenvoting

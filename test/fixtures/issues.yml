@@ -1,5 +1,5 @@
 DEFAULTS: &DEFAULTS
-  project_id: 1
+  project: project_01
   tracker_id: 1
   priority_id: 3
 
