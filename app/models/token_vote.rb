@@ -10,6 +10,7 @@ class TokenVote < ActiveRecord::Base
   belongs_to :voter, class_name: 'User'
 
   DURATIONS = {
+    "1 day" => 1.day,
     "1 week" => 1.week,
     "1 month" => 1.month,
     "3 months" => 3.months,

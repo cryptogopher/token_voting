@@ -8,13 +8,14 @@ class TokenVotesController < ApplicationController
   helper IssuesHelper
 
   def create
+    #byebug
     @token_vote = TokenVote.new(token_vote_params)
     @token_vote.voter = User.current
     @token_vote.issue = @issue
     @token_vote.generate_address
-    @token_vote.save
+    @token_vote.save!
 
-  rescue RPC::Error, TokenVote::Error => e
+  rescue RPC::Error, TokenVote::Error, ActiveRecord::RecordInvalid => e
     flash[:error] = e.message
 
   ensure
