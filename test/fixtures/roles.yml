@@ -61,7 +61,7 @@ manager:
     - :manage_related_issues
     - :manage_project_activities
     - :import_issues
-
+    - :manage_token_votes
   position: 1
 
 developer:
@@ -110,7 +110,7 @@ developer:
     - :manage_files
     - :browse_repository
     - :view_changesets
-
+    - :manage_token_votes
   position: 2
 
 reporter:
@@ -152,7 +152,7 @@ reporter:
     - :manage_files
     - :browse_repository
     - :view_changesets
-
+    - :manage_token_votes
   position: 3
 
 nonmember:
@@ -183,7 +183,6 @@ nonmember:
     - :manage_files
     - :browse_repository
     - :view_changesets
-
   position: 1
 
 anonymous:
@@ -205,6 +204,5 @@ anonymous:
     - :view_files
     - :browse_repository
     - :view_changesets
-
   position: 1
 

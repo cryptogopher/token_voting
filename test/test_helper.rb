@@ -38,6 +38,11 @@ def default_plugin_settings
   }
 end
 
+def logout_user
+  post signout_path
+  #request.session.clear
+end
+
 def update_issue_status(issue, user, status, &block)
   with_current_user user do
     journal = issue.init_journal(user)
