@@ -18,7 +18,7 @@ ActiveRecord::FixtureSet.create_fixtures(File.dirname(__FILE__) + '/fixtures/',
     :enabled_modules
   ])
 
-def default_plugin_settings
+def setup_plugin
   Setting.plugin_token_voting = {
     'default_token' => 'BTCREG',
     'BTCREG' => {
