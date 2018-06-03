@@ -1,14 +1,11 @@
 require File.expand_path('../../test_helper', __FILE__)
 
-class TokenVotesControllerTest < Redmine::IntegrationTest
+class TokenVotesTest < Redmine::IntegrationTest
   fixtures :issues, :issue_statuses, :users,
     :projects, :roles, :members, :member_roles, :enabled_modules
 
   def setup
     setup_plugin
-
-    @rpc = RPC.get_rpc('BTCREG')
-    @rpc.generate(101)
   end
 
   def test_create_only_if_authorized_and_has_permissions
@@ -109,14 +106,6 @@ class TokenVotesControllerTest < Redmine::IntegrationTest
       delete "#{token_vote_path(tv)}.js"
     end
     assert_response :ok
-  end
-
-  def test_amount_update_on_walletinotify_and_blocknotify
-    # For these tests to be executed successfully bitcoind regtest daemon must be
-    # configured with 'walletnotify' and 'blocknotify' options properly.
-
-
-
   end
 end
 

@@ -10,3 +10,4 @@ module RPC
     self.generate_to_address(n, @@mining_address)
   end
 end
+

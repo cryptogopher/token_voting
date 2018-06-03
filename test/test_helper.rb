@@ -65,3 +65,15 @@ def TokenVote.generate!(attributes={})
   tv
 end
 
+def create_token_vote(issue=issues(:issue_01), attributes={})
+  attributes[:token] ||= 'BTCREG'
+  attributes[:duration] ||= 1.day
+
+  assert_difference 'TokenVote.count', 1 do
+    post "#{issue_token_votes_path(issue)}.js", params: { token_vote: attributes }
+    assert_nil flash[:error]
+  end
+  assert_response :ok
+end
+
+
