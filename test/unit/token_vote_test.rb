@@ -6,6 +6,7 @@ class TokenVoteTest < ActiveSupport::TestCase
     :journals, :journal_details
 
   def setup
+    super
     default_plugin_settings
   end
 

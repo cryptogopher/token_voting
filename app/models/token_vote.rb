@@ -177,8 +177,7 @@ class TokenVote < ActiveRecord::Base
   end
 
   def self.update_txn_amounts(token, txid)
-    token = token.to_sym
-    raise Error, "Invalid token: #{token.to_s}" unless tokens.has_key?(token)
+    raise Error, "Invalid token: #{token}" unless tokens.has_key?(token)
 
     rpc = RPC.get_rpc(token)
     addresses = rpc.get_tx_addresses(txid)
@@ -189,8 +188,7 @@ class TokenVote < ActiveRecord::Base
   end
 
   def self.update_unconfirmed_amounts(token, blockhash)
-    token = token.to_sym
-    raise Error, "Invalid token: #{token.to_s}" unless tokens.has_key?(token)
+    raise Error, "Invalid token: #{token}" unless tokens.has_key?(token)
 
     rpc = RPC.get_rpc(token)
     TokenVote.where('token = ? and amount_unconf != 0', tokens[token]).each do |tv|

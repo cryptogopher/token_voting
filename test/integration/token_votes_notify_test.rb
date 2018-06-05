@@ -1,4 +1,5 @@
 require File.expand_path('../../test_helper', __FILE__)
+require 'webrick'
 
 class TokenVotesNotifyTest < Redmine::IntegrationTest
   fixtures :issues, :issue_statuses, :users,
@@ -6,7 +7,7 @@ class TokenVotesNotifyTest < Redmine::IntegrationTest
 
   # Waits for expected number of notifications to occur with regard to timeout.
   # Also checks if there were no superfluous notifications after completion.
-  def wait_for_notifications(expected={}, timeout=10, wait_after=0.1)
+  def wait_for_notifications(expected={}, timeout=1, wait_after=0.1)
     time_end = Time.current + timeout
     while expected.any? { |k,v| @notifications[k] < v } && Time.current < time_end do
       sleep 0.1
@@ -16,19 +17,34 @@ class TokenVotesNotifyTest < Redmine::IntegrationTest
   end
 
   def setup
+    super
     setup_plugin
 
     @notifications = Hash.new(0)
     ActiveSupport::Notifications.subscribe 'process_action.action_controller' do |*args|
       data = args.extract_options!
       @notifications[data[:action]] += 1 if data[:controller] == 'TokenVotesController'
-      puts data
     end
+
+    server = WEBrick::HTTPServer.new(
+      Port: 3000,
+      Logger: WEBrick::Log.new("/dev/null"),
+      AccessLog: []
+    )
+    server.mount_proc '/' do |req, resp|
+      headers = {}
+      req.header.each { |k,v| v.each { |a| headers[k] = a } }
+      response = get req.path, {}, headers
+    end
+    Thread.new {
+      server.start
+    }
 
     @rpc = RPC.get_rpc('BTCREG')
   end
 
-  def finalize
+  def teardown
+    super
     logout_user
   end
 
@@ -38,7 +54,7 @@ class TokenVotesNotifyTest < Redmine::IntegrationTest
     log_user 'alice', 'foo'
 
     assert_difference '@notifications["blocknotify"]', 101 do
-      @rpc.generate(101)
+      @rpc.generate(5)
       wait_for_notifications({"blocknotify" => 101})
     end
 

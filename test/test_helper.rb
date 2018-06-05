@@ -40,7 +40,6 @@ end
 
 def logout_user
   post signout_path
-  #request.session.clear
 end
 
 def update_issue_status(issue, user, status, &block)

@@ -5,6 +5,7 @@ class TokenVotesTest < Redmine::IntegrationTest
     :projects, :roles, :members, :member_roles, :enabled_modules
 
   def setup
+    super
     setup_plugin
   end
 
