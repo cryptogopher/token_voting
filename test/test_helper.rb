@@ -1,5 +1,6 @@
 # Load the Redmine helper
 require File.expand_path(File.dirname(__FILE__) + '/../../../test/test_helper')
+require 'webrick'
 
 ActiveRecord::FixtureSet.create_fixtures(File.dirname(__FILE__) + '/fixtures/',
   [
@@ -38,10 +39,6 @@ def setup_plugin
   }
 end
 
-def logout_user
-  post signout_path
-end
-
 def update_issue_status(issue, user, status, &block)
   with_current_user user do
     journal = issue.init_journal(user)
@@ -64,6 +61,10 @@ def TokenVote.generate!(attributes={})
   tv
 end
 
+def logout_user
+  post signout_path
+end
+
 def create_token_vote(issue=issues(:issue_01), attributes={})
   attributes[:token] ||= 'BTCREG'
   attributes[:duration] ||= 1.day
@@ -75,4 +76,53 @@ def create_token_vote(issue=issues(:issue_01), attributes={})
   assert_response :ok
 end
 
+module TokenVoting
+  class NotificationIntegrationTest < Redmine::IntegrationTest
+    def initialize(*args)
+      super
+
+      @notifications = Hash.new(0)
+      ActiveSupport::Notifications.subscribe 'process_action.action_controller' do |*args|
+        data = args.extract_options!
+        @notifications[data[:action]] += 1 if data[:controller] == 'TokenVotesController'
+      end
+
+      # Setup server for receiving notifications (application server is not running
+      # during tests).
+      server = WEBrick::HTTPServer.new(
+        Port: 3000,
+        Logger: WEBrick::Log.new("/dev/null"),
+        AccessLog: []
+      )
+      server.mount_proc '/' do |req, resp|
+        headers = {}
+        req.header.each { |k,v| v.each { |a| headers[k] = a } }
+        resp = self.get req.path, {}, headers
+      end
+      @t = Thread.new {
+        server.start
+      }
+      Minitest.after_run do
+        @t.kill
+        @t.join
+      end
+      Timeout.timeout(5) do
+        sleep 0.1 until server.status == :Running
+      end
+    end
+
+    # Waits for expected number of notifications to occur with regard to timeout.
+    # Also checks if there were no superfluous notifications after completion.
+    def assert_notifications(expected={}, timeout=2, wait_after=0.5)
+      @notifications.clear
+      yield
+      Timeout.timeout(timeout) do
+        sleep 0.1 until expected.all? { |k,v| @notifications[k] >= v }
+      end
+      # catch superfluous notifications if any
+      sleep wait_after
+      assert_operator expected, :<=, @notifications
+    end
+  end
+end
 
