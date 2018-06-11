@@ -80,6 +80,34 @@ end
 
 module TokenVoting
   class NotificationIntegrationTest < Redmine::IntegrationTest
+    # Forces all threads to share the same connection. Necessary for
+    # running notifications through webrick, because it starts separate thread.
+    # source: https://gist.github.com/josevalim/470808
+    class ActiveRecord::Base
+      mattr_accessor :shared_connection
+      @@shared_connection = nil
+
+      def self.connection
+        @@shared_connection || retrieve_connection
+      end
+    end
+    ActiveRecord::Base.shared_connection = ActiveRecord::Base.connection
+    # Forces exclusive access to same connection - race conditions happen
+    # when multiple threads use same connection simultaneously.
+    raise "adapter was expected to be mysql2" unless
+      ActiveRecord::Base.connection.adapter_name.downcase == "mysql2"
+    module MutexLockedQuerying
+      @@semaphore = Mutex.new
+
+      def query(*)
+        @@semaphore.synchronize { super }
+      end
+    end
+    Mysql2::Client.prepend(MutexLockedQuerying)
+    # Alternatively transactional fixtures can be disabled with some
+    # additional magic applied (didn't make it to work :/ ).
+    #self.use_transactional_fixtures = false
+
     def initialize(*args)
       super
 
@@ -130,17 +158,3 @@ module TokenVoting
   end
 end
 
-# Forces all threads to share the same connection. Necessary for
-# running notifications through webrick, because it starts in a thread.
-class ActiveRecord::Base
-  mattr_accessor :shared_connection
-  @@shared_connection = nil
-
-  def self.connection
-    @@shared_connection || retrieve_connection
-  end
-end
-ActiveRecord::Base.shared_connection = ActiveRecord::Base.connection
-# Alternatively transactional fixtures can be disabled with some
-# additional magic applied (didn't make it to work :/ ).
-#self.use_transactional_fixtures = false
