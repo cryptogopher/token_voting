@@ -71,9 +71,11 @@ def create_token_vote(issue=issues(:issue_01), attributes={})
 
   assert_difference 'TokenVote.count', 1 do
     post "#{issue_token_votes_path(issue)}.js", params: { token_vote: attributes }
-    assert_nil flash[:error]
   end
+  assert_nil flash[:error]
   assert_response :ok
+
+  TokenVote.last
 end
 
 module TokenVoting
@@ -113,7 +115,9 @@ module TokenVoting
 
     # Waits for expected number of notifications to occur with regard to timeout.
     # Also checks if there were no superfluous notifications after completion.
-    def assert_notifications(expected={}, timeout=2, wait_after=0.5)
+    def assert_notifications(expected={})
+      timeout=2
+      wait_after=0.5
       @notifications.clear
       yield
       Timeout.timeout(timeout) do
@@ -126,3 +130,17 @@ module TokenVoting
   end
 end
 
+# Forces all threads to share the same connection. Necessary for
+# running notifications through webrick, because it starts in a thread.
+class ActiveRecord::Base
+  mattr_accessor :shared_connection
+  @@shared_connection = nil
+
+  def self.connection
+    @@shared_connection || retrieve_connection
+  end
+end
+ActiveRecord::Base.shared_connection = ActiveRecord::Base.connection
+# Alternatively transactional fixtures can be disabled with some
+# additional magic applied (didn't make it to work :/ ).
+#self.use_transactional_fixtures = false

@@ -8,7 +8,6 @@ class TokenVotesController < ApplicationController
   helper IssuesHelper
 
   def create
-    #byebug
     @token_vote = TokenVote.new(token_vote_params)
     @token_vote.voter = User.current
     @token_vote.issue = @issue

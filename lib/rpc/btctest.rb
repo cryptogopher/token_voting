@@ -1,3 +1,4 @@
 module RPC
-  BTCTEST = BTC
+  class BTCTEST < BTC
+  end
 end

@@ -1,3 +1,4 @@
 module RPC
-  BCH = BTC
+  class BCH < BTC
+  end
 end

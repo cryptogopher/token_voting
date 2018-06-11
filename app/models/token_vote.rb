@@ -89,7 +89,7 @@ class TokenVote < ActiveRecord::Base
       elsif issue_curr_completed == false
         tv.is_completed = false
       end
-      tv.save
+      tv.save!
     end
 
     if issue_curr_completed == true
@@ -130,7 +130,7 @@ class TokenVote < ActiveRecord::Base
           # FIXME: potential rounding errors - sum of amounts should equal sum of payouts
           tp = TokenPayout.new(issue: issue, payee: User.find(user_id), token: token,
                                amount: share*amount)
-          tp.save
+          tp.save!
         end
       end
     else
@@ -183,7 +183,7 @@ class TokenVote < ActiveRecord::Base
     addresses = rpc.get_tx_addresses(txid)
     TokenVote.where(token: tokens[token], address: addresses).each do |tv|
       tv.update_amounts
-      tv.save
+      tv.save!
     end
   end
 
@@ -193,7 +193,7 @@ class TokenVote < ActiveRecord::Base
     rpc = RPC.get_rpc(token)
     TokenVote.where('token = ? and amount_unconf != 0', tokens[token]).each do |tv|
       tv.update_amounts
-      tv.save
+      tv.save!
     end
   end
 
