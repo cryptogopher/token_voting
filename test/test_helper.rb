@@ -99,7 +99,7 @@ module TokenVoting
     module MutexLockedQuerying
       @@semaphore = Mutex.new
 
-      def query(*)
+      def query(*args)
         @@semaphore.synchronize { super }
       end
     end
@@ -110,11 +110,17 @@ module TokenVoting
 
     def initialize(*args)
       super
+      @rpc = RPC.get_rpc('BTCREG')
 
       @notifications = Hash.new(0)
       ActiveSupport::Notifications.subscribe 'process_action.action_controller' do |*args|
         data = args.extract_options!
-        @notifications[data[:action]] += 1 if data[:controller] == 'TokenVotesController'
+        if data[:controller] == 'TokenVotesController'
+          tx = @rpc.get_transaction(data[:params]['txid']) if data[:action] == 'walletnotify'
+          unless tx && tx['generated']
+            @notifications[data[:action]] += 1
+          end
+        end
       end
 
       # Setup server for receiving notifications (application server is not running
@@ -144,9 +150,10 @@ module TokenVoting
     # Waits for expected number of notifications to occur with regard to timeout.
     # Also checks if there were no superfluous notifications after completion.
     def assert_notifications(expected={})
-      timeout=2
+      timeout=3
       wait_after=0.5
       @notifications.clear
+      expected.each { |k,v| @notifications[k] = 0 }
       yield
       Timeout.timeout(timeout) do
         sleep 0.1 until expected.all? { |k,v| @notifications[k] >= v }

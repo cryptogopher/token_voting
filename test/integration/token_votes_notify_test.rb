@@ -7,8 +7,6 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
   def setup
     super
     setup_plugin
-
-    @rpc = RPC.get_rpc('BTCREG')
   end
 
   def teardown
@@ -19,6 +17,11 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
   def test_amount_update_on_walletnotify_and_blocknotify
     # For these tests to be executed successfully bitcoind regtest daemon must be
     # configured with 'walletnotify' and 'blocknotify' options properly.
+    # walletnotify occurs after:
+    #  * first receiving a payment
+    #  * first conformation on the payment
+    #  * you send a payment
+    
     log_user 'alice', 'foo'
 
     # First coinbase output is spendable after 100 confirmations.
@@ -33,6 +36,21 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     vote.reload
     assert_equal vote.amount_unconf, 1.0
     assert_equal vote.amount_conf, 0
+
+    min_conf = Setting.plugin_token_voting['BTCREG']['min_conf'].to_i
+    assert_notifications 'walletnotify' => 1, 'blocknotify' => 5 do
+      @rpc.generate(min_conf-1)
+    end
+    vote.reload
+    assert_equal vote.amount_unconf, 1.0
+    assert_equal vote.amount_conf, 0
+
+    assert_notifications 'walletnotify' => 0, 'blocknotify' => 1 do
+      @rpc.generate(1)
+    end
+    vote.reload
+    assert_equal vote.amount_unconf, 0
+    assert_equal vote.amount_conf, 1.0
   end
 end
 
