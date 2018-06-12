@@ -17,9 +17,9 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
   def test_amount_update_on_walletnotify_and_blocknotify
     # For these tests to be executed successfully bitcoind regtest daemon must be
     # configured with 'walletnotify' and 'blocknotify' options properly.
-    # walletnotify occurs after:
+    # 'walletnotify' occurs after:
     #  * first receiving a payment
-    #  * first conformation on the payment
+    #  * first confirmation on the payment
     #  * you send a payment
     
     log_user 'alice', 'foo'
@@ -47,6 +47,13 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
 
     assert_notifications 'walletnotify' => 0, 'blocknotify' => 1 do
       @rpc.generate(1)
+    end
+    vote.reload
+    assert_equal vote.amount_unconf, 0
+    assert_equal vote.amount_conf, 1.0
+
+    assert_notifications 'walletnotify' => 0, 'blocknotify' => 10 do
+      @rpc.generate(10)
     end
     vote.reload
     assert_equal vote.amount_unconf, 0
