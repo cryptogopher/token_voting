@@ -24,21 +24,16 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     
     log_user 'alice', 'foo'
 
-    # First coinbase output is spendable after 100 confirmations.
-    assert_notifications 'blocknotify' => 101 do
-      @rpc.generate(101)
-    end
-
     vote = create_token_vote
-    assert_notifications 'walletnotify' => 2 do
-      @rpc.send_to_address(vote.address, 1.0)
+    assert_notifications 'walletnotify' => 1 do
+      puts @rpc.fund(vote.address, 1.0)
     end
     vote.reload
     assert_equal vote.amount_unconf, 1.0
     assert_equal vote.amount_conf, 0
 
     min_conf = Setting.plugin_token_voting['BTCREG']['min_conf'].to_i
-    assert_notifications 'walletnotify' => 1, 'blocknotify' => 5 do
+    assert_notifications 'walletnotify' => 1, 'blocknotify' => (min_conf-1) do
       @rpc.generate(min_conf-1)
     end
     vote.reload

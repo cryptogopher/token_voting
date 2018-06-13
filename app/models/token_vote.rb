@@ -118,7 +118,7 @@ class TokenVote < ActiveRecord::Base
         prev_checkpoint = curr_checkpoint
       end
 
-      payouts = Hash.new(BigDecimal.new(0))
+      payouts = Hash.new(BigDecimal(0))
       payees.each_with_index do |payee, checkpoint| 
         payouts[payee] += shares[checkpoint] if shares[checkpoint] > 0
       end
@@ -154,6 +154,7 @@ class TokenVote < ActiveRecord::Base
   def update_amounts
     rpc = RPC.get_rpc(self.token)
     minimum_conf = Setting.plugin_token_voting[self.token]['min_conf'].to_i
+    # FIXME?: get_received_by_address does not count coinbase txs
     self.amount_conf = 
       rpc.get_received_by_address(self.address, minimum_conf)
     self.amount_unconf = 

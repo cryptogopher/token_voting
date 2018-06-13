@@ -111,6 +111,10 @@ module TokenVoting
     def initialize(*args)
       super
       @rpc = RPC.get_rpc('BTCREG')
+      if @rpc.get_mined_balance < 100.0
+        @rpc.generate(110)
+        # FIXME?: wait for notifications
+      end
 
       @notifications = Hash.new(0)
       ActiveSupport::Notifications.subscribe 'process_action.action_controller' do |*args|
