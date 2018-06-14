@@ -23,8 +23,11 @@ def setup_plugin
   Setting.plugin_token_voting = {
     'default_token' => 'BTCREG',
     'BTCREG' => {
-      'rpc_uri' => 'http://regtest:7nluWvQfpWTewrCXpChUkoRShigXs29H@172.17.0.1:10482',
+      'rpc_uri' => 'http://regtest-wallet:7nluWvQfpWTewrCXpChUkoRShigXs29H@172.17.0.1:10782',
       'min_conf' => '6'
+    },
+    'BTCREGNetwork' => {
+      'rpc_uri' => 'http://regtest-net:7nluWvQfpWTewrCXpChUkoRShigXs29H@172.17.0.1:10482'
     },
     'BTCTEST' => {
       'rpc_uri' => 'http://regtest:7nluWvQfpWTewrCXpChUkoRShigXs29H@172.17.0.1:10482',
@@ -104,27 +107,26 @@ module TokenVoting
       end
     end
     Mysql2::Client.prepend(MutexLockedQuerying)
-    # Alternatively transactional fixtures can be disabled with some
-    # additional magic applied (didn't make it to work :/ ).
-    #self.use_transactional_fixtures = false
-
-    def initialize(*args)
+    
+    def setup
       super
-      @rpc = RPC.get_rpc('BTCREG')
-      if @rpc.get_mined_balance < 100.0
-        @rpc.generate(110)
-        # FIXME?: wait for notifications
+      return if @webrick
+
+      setup_plugin
+
+      # Expecting to work with at least 2 nodes: one working as wallet and the
+      # other as rest of network (from where payments are incoming).
+      # Configurations for bitcoind are in test/configs/bitcoind-regtest-* dirs.
+      @network = RPC.get_rpc('BTCREGNetwork')
+      if @network.get_wallet_info['balance'] < 100.0
+        @network.generate(110)
       end
+      @wallet = RPC.get_rpc('BTCREG')
 
       @notifications = Hash.new(0)
       ActiveSupport::Notifications.subscribe 'process_action.action_controller' do |*args|
         data = args.extract_options!
-        if data[:controller] == 'TokenVotesController'
-          tx = @rpc.get_transaction(data[:params]['txid']) if data[:action] == 'walletnotify'
-          unless tx && tx['generated']
-            @notifications[data[:action]] += 1
-          end
-        end
+        @notifications[data[:action]] += 1 if data[:controller] == 'TokenVotesController'
       end
 
       # Setup server for receiving notifications (application server is not running
@@ -139,12 +141,12 @@ module TokenVoting
         req.header.each { |k,v| v.each { |a| headers[k] = a } }
         resp = self.get req.path, {}, headers
       end
-      @t = Thread.new {
+      @webrick = Thread.new {
         server.start
       }
       Minitest.after_run do
-        @t.kill
-        @t.join
+        @webrick.kill
+        @webrick.join
       end
       Timeout.timeout(5) do
         sleep 0.1 until server.status == :Running
@@ -156,12 +158,14 @@ module TokenVoting
     def assert_notifications(expected={})
       timeout=3
       wait_after=0.5
+
       @notifications.clear
       expected.each { |k,v| @notifications[k] = 0 }
       yield
       Timeout.timeout(timeout) do
         sleep 0.1 until expected.all? { |k,v| @notifications[k] >= v }
       end
+
       # catch superfluous notifications if any
       sleep wait_after
       assert_operator expected, :<=, @notifications

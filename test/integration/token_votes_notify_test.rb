@@ -26,7 +26,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
 
     vote = create_token_vote
     assert_notifications 'walletnotify' => 1, 'blocknotify' => 0 do
-      @rpc.fund(vote.address, 1.0)
+      @network.send_to_address(vote.address, 1.0)
     end
     vote.reload
     assert_equal vote.amount_unconf, 1.0
@@ -34,21 +34,21 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
 
     min_conf = Setting.plugin_token_voting['BTCREG']['min_conf'].to_i
     assert_notifications 'walletnotify' => 1, 'blocknotify' => (min_conf-1) do
-      @rpc.generate(min_conf-1)
+      @network.generate(min_conf-1)
     end
     vote.reload
     assert_equal vote.amount_unconf, 1.0
     assert_equal vote.amount_conf, 0
 
     assert_notifications 'walletnotify' => 0, 'blocknotify' => 1 do
-      @rpc.generate(1)
+      @network.generate(1)
     end
     vote.reload
     assert_equal vote.amount_unconf, 0
     assert_equal vote.amount_conf, 1.0
 
     assert_notifications 'walletnotify' => 0, 'blocknotify' => 10 do
-      @rpc.generate(10)
+      @network.generate(10)
     end
     vote.reload
     assert_equal vote.amount_unconf, 0
