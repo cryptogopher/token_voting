@@ -102,7 +102,7 @@ module TokenVoting
     module MutexLockedQuerying
       @@semaphore = Mutex.new
 
-      def query(*args)
+      def query(*)
         @@semaphore.synchronize { super }
       end
     end
@@ -156,18 +156,15 @@ module TokenVoting
     # Waits for expected number of notifications to occur with regard to timeout.
     # Also checks if there were no superfluous notifications after completion.
     def assert_notifications(expected={})
-      timeout=3
-      wait_after=0.5
-
       @notifications.clear
       expected.each { |k,v| @notifications[k] = 0 }
       yield
-      Timeout.timeout(timeout) do
+      Timeout.timeout(3) do
         sleep 0.1 until expected.all? { |k,v| @notifications[k] >= v }
       end
 
       # catch superfluous notifications if any
-      sleep wait_after
+      sleep 0.5
       assert_operator expected, :<=, @notifications
     end
   end
