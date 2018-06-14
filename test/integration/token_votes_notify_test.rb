@@ -25,8 +25,8 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     log_user 'alice', 'foo'
 
     vote = create_token_vote
-    assert_notifications 'walletnotify' => 1 do
-      puts @rpc.fund(vote.address, 1.0)
+    assert_notifications 'walletnotify' => 1, 'blocknotify' => 0 do
+      @rpc.fund(vote.address, 1.0)
     end
     vote.reload
     assert_equal vote.amount_unconf, 1.0
