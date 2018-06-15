@@ -81,6 +81,14 @@ def create_token_vote(issue=issues(:issue_01), attributes={})
   TokenVote.last
 end
 
+def destroy_token_vote(vote)
+  assert_difference 'TokenVote.count', -1 do
+    delete "#{token_vote_path(vote)}.js"
+  end
+  assert_nil flash[:error]
+  assert_response :ok
+end
+
 module TokenVoting
   class NotificationIntegrationTest < Redmine::IntegrationTest
     # Forces all threads to share the same connection. Necessary for
@@ -108,10 +116,9 @@ module TokenVoting
     end
     Mysql2::Client.prepend(MutexLockedQuerying)
     
+    @@webrick = nil
     def setup
       super
-      return if @webrick
-
       setup_plugin
 
       # Expecting to work with at least 2 nodes: one working as wallet and the
@@ -129,6 +136,7 @@ module TokenVoting
         @notifications[data[:action]] += 1 if data[:controller] == 'TokenVotesController'
       end
 
+      return if @@webrick
       # Setup server for receiving notifications (application server is not running
       # during tests).
       server = WEBrick::HTTPServer.new(
@@ -141,16 +149,21 @@ module TokenVoting
         req.header.each { |k,v| v.each { |a| headers[k] = a } }
         resp = self.get req.path, {}, headers
       end
-      @webrick = Thread.new {
+      @@webrick = Thread.new {
         server.start
       }
       Minitest.after_run do
-        @webrick.kill
-        @webrick.join
+        @@webrick.kill
+        @@webrick.join
       end
       Timeout.timeout(5) do
         sleep 0.1 until server.status == :Running
       end
+    end
+
+    def teardown
+      super
+      ActiveSupport::Notifications.unsubscribe 'process_action.action_controller'
     end
 
     # Waits for expected number of notifications to occur with regard to timeout.
