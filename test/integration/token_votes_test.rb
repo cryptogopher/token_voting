@@ -113,13 +113,15 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     
     log_user 'alice', 'foo'
 
-    vote = create_token_vote
+    vote1 = create_token_vote
+    vote2 = create_token_vote
     assert_notifications 'walletnotify' => 1, 'blocknotify' => 0 do
-      @network.send_to_address(vote.address, 1.0)
+      @network.send_to_address(vote1.address, 1.0)
     end
-    vote.reload
-    assert_equal vote.amount_unconf, 1.0
-    assert_equal vote.amount_conf, 0
+    [vote1, vote2].map(&:reload)
+    assert_equal vote1.amount_unconf, 1.0
+    assert_equal vote1.amount_conf, 0
+    assert_equal vote2.amount_unconf, 0
 
     min_conf = Setting.plugin_token_voting['BTCREG']['min_conf'].to_i
     assert_operator min_conf, :>, 2
@@ -127,30 +129,43 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     assert_notifications 'walletnotify' => 1, 'blocknotify' => 1 do
       @network.generate(1)
     end
-    vote.reload
-    assert_equal vote.amount_unconf, 1.0
-    assert_equal vote.amount_conf, 0
+    [vote1, vote2].map(&:reload)
+    assert_equal vote1.amount_unconf, 1.0
+    assert_equal vote1.amount_conf, 0
+    assert_equal vote2.amount_unconf, 0
 
-    assert_notifications 'walletnotify' => 0, 'blocknotify' => (min_conf-2) do
+    assert_notifications 'walletnotify' => 2, 'blocknotify' => 0 do
+      @network.send_to_address(vote1.address, 0.5)
+      @network.send_to_address(vote2.address, 2.33)
+    end
+    [vote1, vote2].map(&:reload)
+    assert_equal vote1.amount_unconf, 1.5
+    assert_equal vote1.amount_conf, 0
+    assert_equal vote2.amount_unconf, 2.33
+
+    assert_notifications 'walletnotify' => 2, 'blocknotify' => (min_conf-2) do
       @network.generate(min_conf-2)
     end
-    vote.reload
-    assert_equal vote.amount_unconf, 1.0
-    assert_equal vote.amount_conf, 0
+    [vote1, vote2].map(&:reload)
+    assert_equal vote1.amount_unconf, 1.5
+    assert_equal vote1.amount_conf, 0
+    assert_equal vote2.amount_unconf, 2.33
 
     assert_notifications 'walletnotify' => 0, 'blocknotify' => 1 do
       @network.generate(1)
     end
-    vote.reload
-    assert_equal vote.amount_unconf, 0
-    assert_equal vote.amount_conf, 1.0
+    [vote1, vote2].map(&:reload)
+    assert_equal vote1.amount_unconf, 0.5
+    assert_equal vote1.amount_conf, 1.0
+    assert_equal vote2.amount_unconf, 2.33
 
     assert_notifications 'walletnotify' => 0, 'blocknotify' => 10 do
       @network.generate(10)
     end
-    vote.reload
-    assert_equal vote.amount_unconf, 0
-    assert_equal vote.amount_conf, 1.0
+    [vote1, vote2].map(&:reload)
+    assert_equal vote1.amount_unconf, 0
+    assert_equal vote1.amount_conf, 1.5
+    assert_equal vote2.amount_conf, 2.33
   end
 end
 
