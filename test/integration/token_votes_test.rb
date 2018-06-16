@@ -2,7 +2,8 @@ require File.expand_path('../../test_helper', __FILE__)
 
 class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
   fixtures :issues, :issue_statuses, :users,
-    :projects, :roles, :members, :member_roles, :enabled_modules
+    :projects, :roles, :members, :member_roles, :enabled_modules,
+    :trackers, :workflow_transitions
 
   def setup
     super
@@ -39,6 +40,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
 
     # can create
     create_token_vote(issue)
+    # TODO: get issue page and check for valid content
   end
 
   def test_destroy_only_if_authorized_and_deletable
@@ -76,7 +78,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
 
     # TODO: test for destruction without issue visibility
 
-    # cannot destroy if founded
+    # cannot destroy if funded with unconfirmed tx
     assert_notifications 'walletnotify' => 1, 'blocknotify' => 0 do
       @network.send_to_address(vote2.address, 0.2)
     end
@@ -87,8 +89,8 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     end
     assert_response :forbidden
 
+    # cannot destroy if funded with confirmed tx
     min_conf = Setting.plugin_token_voting['BTCREG']['min_conf'].to_i
-
     assert_notifications 'walletnotify' => 1, 'blocknotify' => min_conf do
       @network.generate(min_conf)
     end
@@ -101,6 +103,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
 
     # can destroy
     destroy_token_vote(vote1)
+    # TODO: get issue page and check for valid content
   end
 
   def test_amount_update_on_walletnotify_and_blocknotify
@@ -113,6 +116,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     
     log_user 'alice', 'foo'
 
+    # walletnotify on receiving payment
     vote1 = create_token_vote
     vote2 = create_token_vote
     assert_notifications 'walletnotify' => 1, 'blocknotify' => 0 do
@@ -123,6 +127,8 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     assert_equal vote1.amount_conf, 0
     assert_equal vote2.amount_unconf, 0
 
+    # walletnotify on 1st confirmation
+    # blocknotify on new block
     min_conf = Setting.plugin_token_voting['BTCREG']['min_conf'].to_i
     assert_operator min_conf, :>, 2
 
@@ -134,6 +140,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     assert_equal vote1.amount_conf, 0
     assert_equal vote2.amount_unconf, 0
 
+    # walletnotify on additional payments incl. different vote
     assert_notifications 'walletnotify' => 2, 'blocknotify' => 0 do
       @network.send_to_address(vote1.address, 0.5)
       @network.send_to_address(vote2.address, 2.33)
@@ -143,6 +150,8 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     assert_equal vote1.amount_conf, 0
     assert_equal vote2.amount_unconf, 2.33
 
+    # walletnotify on additional confirmations incl. different vote
+    # amount unconfirmed untill min_conf blocks
     assert_notifications 'walletnotify' => 2, 'blocknotify' => (min_conf-2) do
       @network.generate(min_conf-2)
     end
@@ -151,6 +160,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     assert_equal vote1.amount_conf, 0
     assert_equal vote2.amount_unconf, 2.33
 
+    # amount confirmed after min_conf blocks
     assert_notifications 'walletnotify' => 0, 'blocknotify' => 1 do
       @network.generate(1)
     end
@@ -159,13 +169,65 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     assert_equal vote1.amount_conf, 1.0
     assert_equal vote2.amount_unconf, 2.33
 
-    assert_notifications 'walletnotify' => 0, 'blocknotify' => 10 do
-      @network.generate(10)
+    # all funds confirmed after enough blocks
+    assert_notifications 'walletnotify' => 0, 'blocknotify' => (min_conf*2) do
+      @network.generate(min_conf*2)
     end
     [vote1, vote2].map(&:reload)
     assert_equal vote1.amount_unconf, 0
     assert_equal vote1.amount_conf, 1.5
     assert_equal vote2.amount_conf, 2.33
+  end
+
+  def test_status_after_time_and_issue_status_change
+    log_user 'alice', 'foo'
+    issue1 = issues(:issue_01)
+    issue2 = issues(:issue_02)
+
+    # Resolve issue1 between 8.days and 8.days+1.minute
+    # #0 - completed: 0 - 1.month
+    # #1 - expired: 1.day - 8.days
+    # #2 - completed: 1.day+1.minute - 8.days+1.minute
+    # #3 - expired: 1.week-1.minute - 8.days-1.minute
+    # #4 - issue2, active: 7.days-14.days
+    # #5 - issue2, expired: 7.days-8.days
+    votes = []
+    [
+      [issue1, 0,                1.month], #0
+      [issue1, 1.day,            1.week], #1
+      [issue1, 1.day+5.seconds,  issue_statuses(:resolved)],
+      [issue1, 1.day+1.minute,   1.week], #2
+      [issue1, 1.week-1.minute,  1.day], #3
+      [issue1, 1.week-5.seconds, issue_statuses(:pulled)],
+      [issue2, 1.week,           1.week], #4
+      [issue2, 1.week,           1.day], #5
+      [issue2, 1.week+1.minute,  issue_statuses(:pulled)],
+      [issue1, 8.days+5.seconds, issue_statuses(:closed)],
+    ].each do |issue, t, value|
+      travel(t) do
+        if value.kind_of?(IssueStatus)
+          update_issue_status(issue, value)
+        else
+          votes << create_token_vote(issue, {duration: value})
+        end
+      end
+    end
+
+    travel(8.days+30.seconds) do
+      assert_equal issue1.token_votes.active.map(&:id), []
+      assert_equal issue1.token_votes.completed.map(&:id).sort,
+        [votes[0], votes[2]].map(&:id).sort
+      assert_equal issue1.token_votes.expired.map(&:id).sort,
+        [votes[1], votes[3]].map(&:id).sort
+ 
+      assert_equal issue2.token_votes.active.map(&:id).sort,
+        [votes[4]].map(&:id).sort
+      assert_equal issue2.token_votes.completed.map(&:id), []
+      assert_equal issue2.token_votes.expired.map(&:id).sort,
+        [votes[5]].map(&:id).sort
+    end
+
+    # TODO: get /mytoken_votes page and check for valid content
   end
 end
 

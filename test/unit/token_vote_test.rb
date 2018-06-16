@@ -7,7 +7,7 @@ class TokenVoteTest < ActiveSupport::TestCase
 
   def setup
     super
-    default_plugin_settings
+    setup_plugin
   end
 
   def test_forward_stepwise_processing_payouts
@@ -15,13 +15,13 @@ class TokenVoteTest < ActiveSupport::TestCase
     TokenVote.generate!( {issue: issue, amount_conf: 1.0} )
 
     assert_no_difference 'TokenPayout.count' do
-      update_issue_status(issue, users(:alice), issue_statuses(:resolved))
+      Issue.update_status!(issue, users(:alice), issue_statuses(:resolved))
     end
     assert_no_difference 'TokenPayout.count' do
-      update_issue_status(issue, users(:bob), issue_statuses(:pulled))
+      Issue.update_status!(issue, users(:bob), issue_statuses(:pulled))
     end
     assert_difference 'TokenPayout.count', 3 do
-      update_issue_status(issue, users(:charlie), issue_statuses(:closed))
+      Issue.update_status!(issue, users(:charlie), issue_statuses(:closed))
     end
 
     assert_equal TokenPayout.find_by(payee_id: users(:alice)).amount, 0.7
@@ -34,16 +34,16 @@ class TokenVoteTest < ActiveSupport::TestCase
     TokenVote.generate!( {issue: issue, amount_conf: 1.0} )
 
     assert_no_difference 'TokenPayout.count' do
-      update_issue_status(issue, users(:alice), issue_statuses(:resolved))
+      Issue.update_status!(issue, users(:alice), issue_statuses(:resolved))
     end
     assert_no_difference 'TokenPayout.count' do
-      update_issue_status(issue, users(:bob), issue_statuses(:pulled))
+      Issue.update_status!(issue, users(:bob), issue_statuses(:pulled))
     end
     assert_no_difference 'TokenPayout.count' do
-      update_issue_status(issue, users(:gopher), issue_statuses(:pulled))
+      Issue.update_status!(issue, users(:gopher), issue_statuses(:pulled))
     end
     assert_difference 'TokenPayout.count', 3 do
-      update_issue_status(issue, users(:charlie), issue_statuses(:closed))
+      Issue.update_status!(issue, users(:charlie), issue_statuses(:closed))
     end
 
     assert_equal TokenPayout.find_by(payee_id: users(:alice)).amount, 0.7
@@ -57,10 +57,10 @@ class TokenVoteTest < ActiveSupport::TestCase
     TokenVote.generate!( {issue: issue, amount_conf: 1.0} )
 
     assert_no_difference 'TokenPayout.count' do
-      update_issue_status(issue, users(:alice), issue_statuses(:resolved))
+      Issue.update_status!(issue, users(:alice), issue_statuses(:resolved))
     end
     assert_difference 'TokenPayout.count', 2 do
-      update_issue_status(issue, users(:charlie), issue_statuses(:closed))
+      Issue.update_status!(issue, users(:charlie), issue_statuses(:closed))
     end
 
     assert_equal TokenPayout.find_by(payee_id: users(:alice)).amount, 0.7
@@ -72,19 +72,19 @@ class TokenVoteTest < ActiveSupport::TestCase
     TokenVote.generate!( {issue: issue, amount_conf: 1.0} )
 
     assert_no_difference 'TokenPayout.count' do
-      update_issue_status(issue, users(:alice), issue_statuses(:resolved))
+      Issue.update_status!(issue, users(:alice), issue_statuses(:resolved))
     end
     assert_no_difference 'TokenPayout.count' do
-      update_issue_status(issue, users(:bob), issue_statuses(:pulled))
+      Issue.update_status!(issue, users(:bob), issue_statuses(:pulled))
     end
     assert_no_difference 'TokenPayout.count' do
-      update_issue_status(issue, users(:charlie), issue_statuses(:resolved))
+      Issue.update_status!(issue, users(:charlie), issue_statuses(:resolved))
     end
     assert_no_difference 'TokenPayout.count' do
-      update_issue_status(issue, users(:dave), issue_statuses(:pulled))
+      Issue.update_status!(issue, users(:dave), issue_statuses(:pulled))
     end
     assert_difference 'TokenPayout.count', 3 do
-      update_issue_status(issue, users(:gopher), issue_statuses(:closed))
+      Issue.update_status!(issue, users(:gopher), issue_statuses(:closed))
     end
 
     assert_equal TokenPayout.find_by(payee_id: users(:alice)).amount, 0.7
@@ -99,13 +99,13 @@ class TokenVoteTest < ActiveSupport::TestCase
     TokenVote.generate!( {issue: issue, amount_conf: 1.0} )
 
     assert_no_difference 'TokenPayout.count' do
-      update_issue_status(issue, users(:bob), issue_statuses(:pulled))
+      Issue.update_status!(issue, users(:bob), issue_statuses(:pulled))
     end
     assert_no_difference 'TokenPayout.count' do
-      update_issue_status(issue, users(:charlie), issue_statuses(:new))
+      Issue.update_status!(issue, users(:charlie), issue_statuses(:new))
     end
     assert_difference 'TokenPayout.count', 1 do
-      update_issue_status(issue, users(:gopher), issue_statuses(:closed))
+      Issue.update_status!(issue, users(:gopher), issue_statuses(:closed))
     end
 
     assert_nil TokenPayout.find_by(payee_id: users(:bob))
@@ -118,19 +118,19 @@ class TokenVoteTest < ActiveSupport::TestCase
     TokenVote.generate!( {issue: issue, amount_conf: 1.0} )
 
     assert_no_difference 'TokenPayout.count' do
-      update_issue_status(issue, users(:alice), issue_statuses(:pulled))
+      Issue.update_status!(issue, users(:alice), issue_statuses(:pulled))
     end
     assert_difference 'TokenPayout.count', 2 do
-      update_issue_status(issue, users(:bob), issue_statuses(:closed))
+      Issue.update_status!(issue, users(:bob), issue_statuses(:closed))
     end
     assert_difference 'TokenPayout.count', -2 do
-      update_issue_status(issue, users(:charlie), issue_statuses(:resolved))
+      Issue.update_status!(issue, users(:charlie), issue_statuses(:resolved))
     end
     assert_no_difference 'TokenPayout.count' do
-      update_issue_status(issue, users(:dave), issue_statuses(:pulled))
+      Issue.update_status!(issue, users(:dave), issue_statuses(:pulled))
     end
     assert_difference 'TokenPayout.count', 3 do
-      update_issue_status(issue, users(:gopher), issue_statuses(:closed))
+      Issue.update_status!(issue, users(:gopher), issue_statuses(:closed))
     end
 
     assert_equal TokenPayout.find_by(payee_id: users(:alice)).amount, 0.7
@@ -145,7 +145,7 @@ class TokenVoteTest < ActiveSupport::TestCase
     TokenVote.generate!( {issue: issue, amount_conf: 1.0} )
 
     assert_difference 'TokenPayout.count', 1 do
-      update_issue_status(issue, users(:alice), issue_statuses(:closed))
+      Issue.update_status!(issue, users(:alice), issue_statuses(:closed))
     end
 
     assert_equal TokenPayout.find_by(payee_id: users(:alice)).amount, 1.0
@@ -158,13 +158,13 @@ class TokenVoteTest < ActiveSupport::TestCase
     TokenVote.generate!( {issue: issue, amount_conf: 1.0} )
 
     assert_no_difference 'TokenPayout.count' do
-      update_issue_status(issue, users(:alice), issue_statuses(:resolved))
+      Issue.update_status!(issue, users(:alice), issue_statuses(:resolved))
     end
     assert_no_difference 'TokenPayout.count' do
-      update_issue_status(issue, users(:bob), issue_statuses(:pulled))
+      Issue.update_status!(issue, users(:bob), issue_statuses(:pulled))
     end
     assert_difference 'TokenPayout.count', 2 do
-      update_issue_status(issue, users(:charlie), issue_statuses(:closed))
+      Issue.update_status!(issue, users(:charlie), issue_statuses(:closed))
     end
 
     assert_equal TokenPayout.find_by(payee_id: users(:alice)).amount, 0.6
@@ -177,13 +177,13 @@ class TokenVoteTest < ActiveSupport::TestCase
     TokenVote.generate!( {issue: issue, amount_conf: 1.0} )
 
     assert_no_difference 'TokenPayout.count' do
-      update_issue_status(issue, users(:alice), issue_statuses(:resolved))
+      Issue.update_status!(issue, users(:alice), issue_statuses(:resolved))
     end
     assert_no_difference 'TokenPayout.count' do
-      update_issue_status(issue, users(:bob), issue_statuses(:pulled))
+      Issue.update_status!(issue, users(:bob), issue_statuses(:pulled))
     end
     assert_difference 'TokenPayout.count', 2 do
-      update_issue_status(issue, users(:alice), issue_statuses(:closed))
+      Issue.update_status!(issue, users(:alice), issue_statuses(:closed))
     end
 
     assert_equal TokenPayout.find_by(payee_id: users(:alice)).amount, 0.8
@@ -197,13 +197,13 @@ class TokenVoteTest < ActiveSupport::TestCase
     TokenVote.generate!( {issue: issue, amount_conf: 15.0} )
 
     assert_no_difference 'TokenPayout.count' do
-      update_issue_status(issue, users(:alice), issue_statuses(:resolved))
+      Issue.update_status!(issue, users(:alice), issue_statuses(:resolved))
     end
     assert_no_difference 'TokenPayout.count' do
-      update_issue_status(issue, users(:bob), issue_statuses(:pulled))
+      Issue.update_status!(issue, users(:bob), issue_statuses(:pulled))
     end
     assert_difference 'TokenPayout.count', 3 do
-      update_issue_status(issue, users(:charlie), issue_statuses(:closed))
+      Issue.update_status!(issue, users(:charlie), issue_statuses(:closed))
     end
 
     assert_equal TokenPayout.find_by(payee_id: users(:alice)).amount, 11.34
@@ -219,13 +219,13 @@ class TokenVoteTest < ActiveSupport::TestCase
     TokenVote.generate!( {issue: issue, amount_conf: 2.0, token: :BTCTEST} )
 
     assert_no_difference 'TokenPayout.count' do
-      update_issue_status(issue, users(:alice), issue_statuses(:resolved))
+      Issue.update_status!(issue, users(:alice), issue_statuses(:resolved))
     end
     assert_no_difference 'TokenPayout.count' do
-      update_issue_status(issue, users(:bob), issue_statuses(:pulled))
+      Issue.update_status!(issue, users(:bob), issue_statuses(:pulled))
     end
     assert_difference 'TokenPayout.count', 6 do
-      update_issue_status(issue, users(:charlie), issue_statuses(:closed))
+      Issue.update_status!(issue, users(:charlie), issue_statuses(:closed))
     end
 
     assert_equal TokenPayout.BTCREG.find_by(payee_id: users(:alice)).amount, 0.77
@@ -245,13 +245,13 @@ class TokenVoteTest < ActiveSupport::TestCase
     end
 
     assert_no_difference 'TokenPayout.count' do
-      update_issue_status(issue, users(:alice), issue_statuses(:resolved))
+      Issue.update_status!(issue, users(:alice), issue_statuses(:resolved))
     end
     assert_no_difference 'TokenPayout.count' do
-      update_issue_status(issue, users(:bob), issue_statuses(:pulled))
+      Issue.update_status!(issue, users(:bob), issue_statuses(:pulled))
     end
     assert_difference 'TokenPayout.count', 3 do
-      update_issue_status(issue, users(:charlie), issue_statuses(:closed))
+      Issue.update_status!(issue, users(:charlie), issue_statuses(:closed))
     end
 
     assert_equal TokenPayout.BTCREG.find_by(payee_id: users(:alice)).amount, 0.1757

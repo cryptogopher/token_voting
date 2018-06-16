@@ -16,7 +16,9 @@ ActiveRecord::FixtureSet.create_fixtures(File.dirname(__FILE__) + '/fixtures/',
     :roles,
     :members,
     :member_roles,
-    :enabled_modules
+    :enabled_modules,
+    :workflow_transitions,
+    :trackers
   ])
 
 def setup_plugin
@@ -30,7 +32,7 @@ def setup_plugin
       'rpc_uri' => 'http://regtest-net:7nluWvQfpWTewrCXpChUkoRShigXs29H@172.17.0.1:10482'
     },
     'BTCTEST' => {
-      'rpc_uri' => 'http://regtest:7nluWvQfpWTewrCXpChUkoRShigXs29H@172.17.0.1:10482',
+      'rpc_uri' => 'http://regtest-wallet:7nluWvQfpWTewrCXpChUkoRShigXs29H@172.17.0.1:10782',
       'min_conf' => '6'
     },
     'checkpoints' => {
@@ -42,14 +44,17 @@ def setup_plugin
   }
 end
 
-def update_issue_status(issue, user, status, &block)
-  with_current_user user do
-    journal = issue.init_journal(user)
-    issue.status = status
-    issue.save!
-    TokenVote.issue_edit_hook(issue, journal)
-    issue.clear_journal
-  end
+def Issue.update_status!(issue, user, status, &block)
+  saved_user = User.current
+  User.current = user
+
+  journal = issue.init_journal(user)
+  issue.status = status
+  issue.save!
+  TokenVote.issue_edit_hook(issue, journal)
+  issue.clear_journal
+ensure
+  User.current = saved_user
 end
 
 def TokenVote.generate!(attributes={})
@@ -73,9 +78,9 @@ def create_token_vote(issue=issues(:issue_01), attributes={})
   attributes[:duration] ||= 1.day
 
   assert_difference 'TokenVote.count', 1 do
-    post "#{issue_token_votes_path(issue)}.js", params: { token_vote: attributes }
+    post "#{issue_token_votes_path(issue)}.js", params: {token_vote: attributes}
+    assert_nil flash[:error]
   end
-  assert_nil flash[:error]
   assert_response :ok
 
   TokenVote.last
@@ -84,9 +89,29 @@ end
 def destroy_token_vote(vote)
   assert_difference 'TokenVote.count', -1 do
     delete "#{token_vote_path(vote)}.js"
+    assert_nil flash[:error]
   end
-  assert_nil flash[:error]
   assert_response :ok
+end
+
+def fund_token_vote(vote, amount)
+  assert_notifications 'walletnotify' => 1, 'blocknotify' => 0 do
+    @network.send_to_address(vote.address, amount)
+  end
+  vote.reload
+end
+
+def generate_blocks(count)
+  assert_notifications 'blocknotify' => count do
+    @network.generate(count)
+  end
+  TokenVote.all.reload
+end
+
+def update_issue_status(issue, status)
+  put "/issues/#{issue.id}", params: {issue: {status_id: status.id}}
+  issue.reload
+  assert_equal issue.status_id, status.id
 end
 
 module TokenVoting
@@ -97,19 +122,19 @@ module TokenVoting
     class ActiveRecord::Base
       mattr_accessor :shared_connection
       @@shared_connection = nil
-
       def self.connection
         @@shared_connection || retrieve_connection
       end
     end
     ActiveRecord::Base.shared_connection = ActiveRecord::Base.connection
+
     # Forces exclusive access to same connection - race conditions happen
     # when multiple threads use same connection simultaneously.
     raise "adapter was expected to be mysql2" unless
       ActiveRecord::Base.connection.adapter_name.downcase == "mysql2"
+
     module MutexLockedQuerying
       @@semaphore = Mutex.new
-
       def query(*)
         @@semaphore.synchronize { super }
       end
