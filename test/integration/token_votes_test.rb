@@ -214,20 +214,22 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     end
 
     travel(8.days+30.seconds) do
-      assert_equal issue1.token_votes.active.map(&:id), []
+      assert_equal issue1.token_votes.active.map(&:id),
+        []
       assert_equal issue1.token_votes.completed.map(&:id).sort,
-        [votes[0], votes[2]].map(&:id).sort
+        [votes[0].id, votes[2].id].sort
       assert_equal issue1.token_votes.expired.map(&:id).sort,
-        [votes[1], votes[3]].map(&:id).sort
+        [votes[1].id, votes[3].id].sort
  
-      assert_equal issue2.token_votes.active.map(&:id).sort,
-        [votes[4]].map(&:id).sort
-      assert_equal issue2.token_votes.completed.map(&:id), []
-      assert_equal issue2.token_votes.expired.map(&:id).sort,
-        [votes[5]].map(&:id).sort
+      assert_equal issue2.token_votes.active.map(&:id),
+        [votes[4].id]
+      assert_equal issue2.token_votes.completed.map(&:id),
+        []
+      assert_equal issue2.token_votes.expired.map(&:id),
+        [votes[5].id]
     end
 
-    # TODO: get /mytoken_votes page and check for valid content
+    # TODO: get /my/token_votes page and check for valid content
   end
 end
 
