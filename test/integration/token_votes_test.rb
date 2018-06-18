@@ -1,7 +1,7 @@
 require File.expand_path('../../test_helper', __FILE__)
 
 class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
-  fixtures :issues, :issue_statuses, :users,
+  fixtures :token_types, :issues, :issue_statuses, :users,
     :projects, :roles, :members, :member_roles, :enabled_modules,
     :trackers, :workflow_transitions
 

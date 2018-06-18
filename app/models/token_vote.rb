@@ -8,6 +8,7 @@ class TokenVote < ActiveRecord::Base
 
   belongs_to :issue
   belongs_to :voter, class_name: 'User'
+  belongs_to :token_type
 
   DURATIONS = {
     "1 day" => 1.day,
@@ -28,13 +29,12 @@ class TokenVote < ActiveRecord::Base
     "6 months" => 6.months,
   }
 
-  enum token: {BTC: 0, BCH: 1, BTCTEST: 1000, BTCREG: 2000}
   #enum status: [:requested, :unconfirmed, :confirmed, :resolved, :expired, :refunded]
 
-  validates :voter, :issue, presence: true, associated: true
+  validates :voter, :issue, :token_type, presence: true, associated: true
   validates :duration, inclusion: { in: DURATIONS.values }
   validates :expiration, :address, presence: true
-  validates :token, inclusion: { in: tokens.keys }
+  validates :address, uniqueness: true
   validates :amount_conf, numericality: { grater_than_or_equal_to: 0 }
   validates :amount_unconf, numericality: true
 
@@ -123,13 +123,14 @@ class TokenVote < ActiveRecord::Base
         payouts[payee] += shares[checkpoint] if shares[checkpoint] > 0
       end
 
-      total_amount_per_token = issue.token_votes.completed.group(:token).sum(:amount_conf)
+      total_amount_per_token =
+        issue.token_votes.completed.group(:token_type).sum(:amount_conf)
 
       payouts.each do |user_id, share|
-        total_amount_per_token.each do |token, amount|
+        total_amount_per_token.each do |token_type, amount|
           # FIXME: potential rounding errors - sum of amounts should equal sum of payouts
-          tp = TokenPayout.new(issue: issue, payee: User.find(user_id), token: token,
-                               amount: share*amount)
+          tp = TokenPayout.new(issue: issue, payee: User.find(user_id),
+                               token_type: token_type, amount: share*amount)
           tp.save!
         end
       end
@@ -141,22 +142,21 @@ class TokenVote < ActiveRecord::Base
   def generate_address
     raise Error, 'Re-generating existing address' if self.address
 
-    rpc = RPC.get_rpc(self.token)
+    rpc = RPC.get_rpc(self.token_type.name)
     # Is there more efficient way to generate unique addressess using RPC?
     # (under all circumstances, including removing wallet file from RPC daemon)
     begin
       new_address = rpc.get_new_address
-    end while TokenVote.exists?({token: self.token, address: new_address})
+    end while TokenVote.exists?({token_type: self.token_type, address: new_address})
 
     self.address = new_address
   end
 
   def update_amounts
-    rpc = RPC.get_rpc(self.token)
-    minimum_conf = Setting.plugin_token_voting[self.token]['min_conf'].to_i
+    rpc = RPC.get_rpc(self.token_type.name)
     # FIXME?: get_received_by_address does not count coinbase txs
     self.amount_conf = 
-      rpc.get_received_by_address(self.address, minimum_conf)
+      rpc.get_received_by_address(self.address, self.token_type.min_conf)
     self.amount_unconf = 
       rpc.get_received_by_address(self.address, 0) - self.amount_conf
   end
@@ -167,32 +167,33 @@ class TokenVote < ActiveRecord::Base
       # Get confirmed amount per token in given period
       stats = token_votes.
         where('expiration > ?', Time.current + period).
-        group(:token).
+        group(:token_type).
         sum(:amount_conf)
-      stats.each do |token_index, amount|
-        token_name = tokens.key(token_index)
-        total_stats[token_name][period] = amount if amount > 0.0
+      stats.each do |token_type, amount|
+        total_stats[token_type.name][period] = amount if amount > 0.0
       end
     end
     return total_stats
   end
 
-  def self.update_txn_amounts(token, txid)
-    raise Error, "Invalid token: #{token}" unless tokens.has_key?(token)
+  def self.update_txn_amounts(tt_name, txid)
+    token_type = TokenTypes.find_by_name(tt_name)
+    raise Error, "Invalid token type name: #{tt_name}" unless token_type
 
-    rpc = RPC.get_rpc(token)
+    rpc = RPC.get_rpc(token_type.name)
     addresses = rpc.get_tx_addresses(txid)
-    TokenVote.where(token: tokens[token], address: addresses).each do |tv|
+    TokenVote.where(token_type: token_type, address: addresses).each do |tv|
       tv.update_amounts
       tv.save!
     end
   end
 
-  def self.update_unconfirmed_amounts(token, blockhash)
-    raise Error, "Invalid token: #{token}" unless tokens.has_key?(token)
+  def self.update_unconfirmed_amounts(tt_name, blockhash)
+    token_type = TokenTypes.find_by_name(tt_name)
+    raise Error, "Invalid token type name: #{tt_name}" unless token_type
 
-    rpc = RPC.get_rpc(token)
-    TokenVote.where('token = ? and amount_unconf != 0', tokens[token]).each do |tv|
+    rpc = RPC.get_rpc(token_type.name)
+    TokenVote.where('token_type_id = ? and amount_unconf != 0', token_type.id).each do |tv|
       tv.update_amounts
       tv.save!
     end
@@ -203,7 +204,7 @@ class TokenVote < ActiveRecord::Base
   def set_defaults
     if new_record?
       self.duration ||= 1.month
-      self.token ||= Setting.plugin_token_voting['default_token']
+      self.token_type ||= TokenType.find_by_default(true) || TokenType.all.first
       self.amount_conf ||= 0
       self.amount_unconf ||= 0
       self.is_completed ||= false

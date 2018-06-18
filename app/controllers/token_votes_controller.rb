@@ -42,7 +42,7 @@ class TokenVotesController < ApplicationController
   # (bitcoind --walletnotify cmdline option)
   def walletnotify
     service_api_request {
-      TokenVote.update_txn_amounts(params[:token], params[:txid])
+      TokenVote.update_txn_amounts(params[:tt_name], params[:txid])
     }
   end
 
@@ -50,7 +50,7 @@ class TokenVotesController < ApplicationController
   # (bitcoind --blocknotify cmdline option)
   def blocknotify
     service_api_request {
-      TokenVote.update_unconfirmed_amounts(params[:token], params[:blockhash])
+      TokenVote.update_unconfirmed_amounts(params[:tt_name], params[:blockhash])
     }
   end
 
@@ -75,7 +75,7 @@ class TokenVotesController < ApplicationController
   end
 
   def token_vote_params
-    params.require(:token_vote).permit(:token, :duration)
+    params.require(:token_vote).permit(:token_type, :duration)
   end
 
   def find_issue

@@ -1,9 +1,8 @@
 require File.expand_path('../../test_helper', __FILE__)
 
 class TokenVoteTest < ActiveSupport::TestCase
-  fixtures :issues, :issue_statuses, :users, :email_addresses, :token_votes, :token_payouts,
-    :trackers, :projects,
-    :journals, :journal_details
+  fixtures :token_types, :issues, :issue_statuses, :users, :email_addresses,
+    :trackers, :projects, :journals, :journal_details
 
   def setup
     super
@@ -213,10 +212,13 @@ class TokenVoteTest < ActiveSupport::TestCase
   
   def test_multiple_tokens_payouts
     issue = issues(:issue_01)
-    TokenVote.generate!( {issue: issue, amount_conf: 1.0, token: :BTCREG} )
-    TokenVote.generate!( {issue: issue, amount_conf: 6.0, token: :BTCTEST} )
-    TokenVote.generate!( {issue: issue, amount_conf: 0.1, token: :BTCREG} )
-    TokenVote.generate!( {issue: issue, amount_conf: 2.0, token: :BTCTEST} )
+    btcreg = token_types(:BTCREG)
+    btctest = token_types(:BTCTEST)
+
+    TokenVote.generate!( {issue: issue, amount_conf: 1.0, token_type: btcreg} )
+    TokenVote.generate!( {issue: issue, amount_conf: 6.0, token_type: btctest} )
+    TokenVote.generate!( {issue: issue, amount_conf: 0.1, token_type: btcreg} )
+    TokenVote.generate!( {issue: issue, amount_conf: 2.0, token_type: btctest} )
 
     assert_no_difference 'TokenPayout.count' do
       Issue.update_status!(issue, users(:alice), issue_statuses(:resolved))
@@ -228,12 +230,14 @@ class TokenVoteTest < ActiveSupport::TestCase
       Issue.update_status!(issue, users(:charlie), issue_statuses(:closed))
     end
 
-    assert_equal TokenPayout.BTCREG.find_by(payee_id: users(:alice)).amount, 0.77
-    assert_equal TokenPayout.BTCTEST.find_by(payee_id: users(:alice)).amount, 5.6
-    assert_equal TokenPayout.BTCREG.find_by(payee_id: users(:bob)).amount, 0.22
-    assert_equal TokenPayout.BTCTEST.find_by(payee_id: users(:bob)).amount, 1.6
-    assert_equal TokenPayout.BTCREG.find_by(payee_id: users(:charlie)).amount, 0.11
-    assert_equal TokenPayout.BTCTEST.find_by(payee_id: users(:charlie)).amount, 0.8
+    btctest_payouts = TokenPayout.where(token_type: btctest)
+    btcreg_payouts = TokenPayout.where(token_type: btcreg)
+    assert_equal btcreg_payouts.find_by(payee_id: users(:alice)).amount, 0.77
+    assert_equal btctest_payouts.find_by(payee_id: users(:alice)).amount, 5.6
+    assert_equal btcreg_payouts.find_by(payee_id: users(:bob)).amount, 0.22
+    assert_equal btctest_payouts.find_by(payee_id: users(:bob)).amount, 1.6
+    assert_equal btcreg_payouts.find_by(payee_id: users(:charlie)).amount, 0.11
+    assert_equal btctest_payouts.find_by(payee_id: users(:charlie)).amount, 0.8
   end
 
   def test_expired_vote_payouts
@@ -254,9 +258,11 @@ class TokenVoteTest < ActiveSupport::TestCase
       Issue.update_status!(issue, users(:charlie), issue_statuses(:closed))
     end
 
-    assert_equal TokenPayout.BTCREG.find_by(payee_id: users(:alice)).amount, 0.1757
-    assert_equal TokenPayout.BTCREG.find_by(payee_id: users(:bob)).amount, 0.0502
-    assert_equal TokenPayout.BTCREG.find_by(payee_id: users(:charlie)).amount, 0.0251
+    payouts = TokenPayout.where(token_type: token_types(:BTCREG))
+    assert_equal payouts.length, 3
+    assert_equal payouts.find_by(payee: users(:alice)).amount, 0.1757
+    assert_equal payouts.find_by(payee_id: users(:bob)).amount, 0.0502
+    assert_equal payouts.find_by(payee_id: users(:charlie)).amount, 0.0251
   end
 end
 

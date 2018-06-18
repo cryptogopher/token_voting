@@ -10,6 +10,7 @@ ActiveRecord::FixtureSet.create_fixtures(File.dirname(__FILE__) + '/fixtures/',
     :email_addresses,
     :token_votes,
     :token_payouts,
+    :token_types,
     :journals,
     :journal_details,
     :projects,
@@ -23,18 +24,6 @@ ActiveRecord::FixtureSet.create_fixtures(File.dirname(__FILE__) + '/fixtures/',
 
 def setup_plugin
   Setting.plugin_token_voting = {
-    'default_token' => 'BTCREG',
-    'BTCREG' => {
-      'rpc_uri' => 'http://regtest-wallet:7nluWvQfpWTewrCXpChUkoRShigXs29H@172.17.0.1:10782',
-      'min_conf' => '6'
-    },
-    'BTCREGNetwork' => {
-      'rpc_uri' => 'http://regtest-net:7nluWvQfpWTewrCXpChUkoRShigXs29H@172.17.0.1:10482'
-    },
-    'BTCTEST' => {
-      'rpc_uri' => 'http://regtest-wallet:7nluWvQfpWTewrCXpChUkoRShigXs29H@172.17.0.1:10782',
-      'min_conf' => '6'
-    },
     'checkpoints' => {
       'statuses' => [[issue_statuses(:resolved).id.to_s],
                      [issue_statuses(:pulled).id.to_s],
@@ -62,7 +51,7 @@ def TokenVote.generate!(attributes={})
   tv.voter ||= User.take
   tv.issue ||= Issue.take
   tv.duration ||= 1.month
-  tv.token ||= :BTCREG
+  tv.token_type ||= token_types(:BTCREG)
   yield tv if block_given?
   tv.generate_address
   tv.save!
