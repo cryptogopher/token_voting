@@ -90,7 +90,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     assert_response :forbidden
 
     # cannot destroy if funded with confirmed tx
-    min_conf = Setting.plugin_token_voting['BTCREG']['min_conf'].to_i
+    min_conf = vote2.token_type.min_conf
     assert_notifications 'walletnotify' => 1, 'blocknotify' => min_conf do
       @network.generate(min_conf)
     end
@@ -129,7 +129,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
 
     # walletnotify on 1st confirmation
     # blocknotify on new block
-    min_conf = Setting.plugin_token_voting['BTCREG']['min_conf'].to_i
+    min_conf = vote1.token_type.min_conf
     assert_operator min_conf, :>, 2
 
     assert_notifications 'walletnotify' => 1, 'blocknotify' => 1 do

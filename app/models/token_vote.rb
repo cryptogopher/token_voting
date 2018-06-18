@@ -177,7 +177,7 @@ class TokenVote < ActiveRecord::Base
   end
 
   def self.update_txn_amounts(token_type_name, txid)
-    token_type = TokenTypes.find_by_name(token_type_name)
+    token_type = TokenType.find_by_name(token_type_name)
     raise Error, "Invalid token type name: #{token_type_name}" unless token_type
 
     rpc = RPC.get_rpc(token_type)
@@ -189,7 +189,7 @@ class TokenVote < ActiveRecord::Base
   end
 
   def self.update_unconfirmed_amounts(token_type_name, blockhash)
-    token_type = TokenTypes.find_by_name(token_type_name)
+    token_type = TokenType.find_by_name(token_type_name)
     raise Error, "Invalid token type name: #{token_type_name}" unless token_type
 
     rpc = RPC.get_rpc(token_type)

@@ -10,7 +10,7 @@
     </tr>
     <% @token_votes.each do |token_vote| %>
       <tr id="token_vote-<%= token_vote.id %>">
-        <td class="token"><%= token_vote.token %></td>
+        <td class="token"><%= token_vote.token_type.name %></td>
         <td class="address"><%= token_vote.address %></td>
         <td class="expiration"><%= format_date(token_vote.expiration) %></td>
         <td class="amount">
