@@ -35,7 +35,7 @@ class TokenVote < ActiveRecord::Base
   validates :duration, inclusion: { in: DURATIONS.values }
   validates :expiration, :address, presence: true
   validates :address, uniqueness: true
-  validates :amount_conf, numericality: { grater_than_or_equal_to: 0 }
+  validates :amount_conf, :amount_in, numericality: { grater_than_or_equal_to: 0 }
   validates :amount_unconf, numericality: true
 
   after_initialize :set_defaults
@@ -46,7 +46,7 @@ class TokenVote < ActiveRecord::Base
   end
 
   def funded?
-    self.amount_unconf > 0 || self.amount_conf > 0
+    self.amount_unconf > 0 || self.amount_in > 0
   end
 
   def visible?(user = User.current)
@@ -176,26 +176,48 @@ class TokenVote < ActiveRecord::Base
     return total_stats
   end
 
-  def self.update_txn_amounts(token_type_name, txid)
-    token_type = TokenType.find_by_name(token_type_name)
-    raise Error, "Invalid token type name: #{token_type_name}" unless token_type
+  def self.process_tx(token_type_name, txid)
+    type = TokenType.find_by_name(token_type_name)
+    raise Error, "Invalid token type name: #{token_type_name}" unless type
 
-    rpc = RPC.get_rpc(token_type)
+    rpc = RPC.get_rpc(type)
     addresses = rpc.get_tx_addresses(txid)
-    TokenVote.where(token_type: token_type, address: addresses).each do |tv|
+    TokenVote.where(token_type: type, address: addresses).each do |tv|
       tv.update_amounts
       tv.save!
     end
   end
 
-  def self.update_unconfirmed_amounts(token_type_name, blockhash)
-    token_type = TokenType.find_by_name(token_type_name)
-    raise Error, "Invalid token type name: #{token_type_name}" unless token_type
+  def self.process_block(token_type_name, blockhash)
+    type = TokenType.find_by_name(token_type_name)
+    raise Error, "Invalid token type name: #{token_type_name}" unless type
 
-    rpc = RPC.get_rpc(token_type)
-    TokenVote.where('token_type_id = ? and amount_unconf != 0', token_type.id).each do |tv|
-      tv.update_amounts
-      tv.save!
+    rpc = RPC.get_rpc(type)
+
+    # Update amount_in/_conf/_unconf for txs confirmed since last synced block.
+    # - amount_in specifies total amount of incoming transactions to address.
+    # It is necessary to compute how much can be withdrawn from 'expired' vote
+    # (completed votes have this amount specified in TokenPayouts).
+    # - amount_conf/_unconf must be updated for all confirmed txs, as 
+    # 'walletnotify' may miss txs and they won't show as unconfirmed.
+    # (so it is not enough to update amounts of unconfirmed txs here).
+    blockhash = rpc.get_block_hash(type.last_sync_height)
+    incoming_txs = rpc.list_since_block(blockhash, type.min_conf, true)
+    last_block_height = rpc.get_block(incoming_txs['lastblock'])['height']
+    incoming_conf_txs = incoming_txs['transactions'].select do |tx|
+      tx['confirmations'] >= type.min_conf
+    end
+
+    TokenVote.transaction do
+      incoming_conf_txs.each do |tx|
+        if vote = TokenVote.find_by(address: tx['address'], token_type: type)
+          vote.amount_in += tx['amount'] if tx['category'] == 'receive'
+          vote.update_amounts
+          vote.save!
+        end
+      end
+      type.last_sync_height = last_block_height
+      type.save!
     end
   end
 
@@ -206,6 +228,7 @@ class TokenVote < ActiveRecord::Base
       self.duration ||= 1.month
       self.token_type ||= TokenType.find_by_default(true) || TokenType.all.first
       self.amount_conf ||= 0
+      self.amount_in ||= 0
       self.amount_unconf ||= 0
       self.is_completed ||= false
     end

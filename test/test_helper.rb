@@ -63,7 +63,7 @@ def logout_user
 end
 
 def create_token_vote(issue=issues(:issue_01), attributes={})
-  attributes[:token] ||= 'BTCREG'
+  attributes[:token_type_id] ||= token_types(:BTCREG).id
   attributes[:duration] ||= 1.day
 
   assert_difference 'TokenVote.count', 1 do
@@ -142,7 +142,10 @@ module TokenVoting
       if @network.get_wallet_info['balance'] < 100.0
         @network.generate(110)
       end
-      @wallet = RPC.get_rpc(token_types(:BTCREG))
+      btcreg = token_types(:BTCREG)
+      @wallet = RPC.get_rpc(btcreg)
+      btcreg.last_sync_height = @wallet.get_block_count
+      btcreg.save!
 
       @notifications = Hash.new(0)
       ActiveSupport::Notifications.subscribe 'process_action.action_controller' do |*args|

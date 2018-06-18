@@ -106,7 +106,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     # TODO: get issue page and check for valid content
   end
 
-  def test_amount_update_on_walletnotify_and_blocknotify
+  def test_amount_conf_amount_unconf_update_on_walletnotify_and_blocknotify
     # For these tests to be executed successfully bitcoind regtest daemon must be
     # configured with 'walletnotify' and 'blocknotify' options properly.
     # 'walletnotify' occurs after:
@@ -115,10 +115,10 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     #  * you send a payment
     
     log_user 'alice', 'foo'
-
-    # walletnotify on receiving payment
     vote1 = create_token_vote
     vote2 = create_token_vote
+
+    # walletnotify on receiving payment
     assert_notifications 'walletnotify' => 1, 'blocknotify' => 0 do
       @network.send_to_address(vote1.address, 1.0)
     end
@@ -129,9 +129,6 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
 
     # walletnotify on 1st confirmation
     # blocknotify on new block
-    min_conf = vote1.token_type.min_conf
-    assert_operator min_conf, :>, 2
-
     assert_notifications 'walletnotify' => 1, 'blocknotify' => 1 do
       @network.generate(1)
     end
@@ -152,6 +149,8 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
 
     # walletnotify on additional confirmations incl. different vote
     # amount unconfirmed untill min_conf blocks
+    min_conf = vote1.token_type.min_conf
+    assert_operator min_conf, :>, 2
     assert_notifications 'walletnotify' => 2, 'blocknotify' => (min_conf-2) do
       @network.generate(min_conf-2)
     end
@@ -177,6 +176,45 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     assert_equal vote1.amount_unconf, 0
     assert_equal vote1.amount_conf, 1.5
     assert_equal vote2.amount_conf, 2.33
+  end
+
+  def test_amount_in_update_on_blocknotify
+    log_user 'alice', 'foo'
+    vote1 = create_token_vote
+
+    # don't count unless confirmed
+    assert_operator min_conf = vote1.token_type.min_conf, :>, 2
+    assert_notifications 'blocknotify' => 1 do
+      @network.send_to_address(vote1.address, 1.45)
+      @network.generate(1)
+    end
+    vote1.reload
+    assert_equal 0, vote1.amount_in
+    assert_equal 1.45, vote1.amount_unconf
+
+    assert_notifications 'blocknotify' => min_conf-2 do
+      @network.generate(min_conf-2)
+    end
+    vote1.reload
+    assert_equal 0, vote1.amount_in
+    assert_equal 0, vote1.amount_conf
+
+    # count after confirmation
+    assert_notifications 'blocknotify' => 1 do
+      @network.generate(1)
+    end
+    vote1.reload
+    assert_equal vote1.amount_in, 1.45
+
+    # don't count outgoing transfers
+    assert_notifications 'blocknotify' => min_conf do
+      @network.send_to_address(vote1.address, 0.12)
+      @wallet.send_to_address(@network.get_new_address, 0.6, '', '', true)
+      @network.generate(min_conf)
+    end
+    vote1.reload
+    assert_equal 1.57, vote1.amount_in
+    assert_equal 0.97, vote1.amount_conf
   end
 
   def test_status_after_time_and_issue_status_change

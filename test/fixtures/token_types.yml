@@ -2,20 +2,20 @@ BTCREG:
   name: BTCREG
   rpc_uri: http://regtest-wallet:7nluWvQfpWTewrCXpChUkoRShigXs29H@172.17.0.1:10782
   min_conf: 6
-  last_synced_block: -1
+  last_sync_height: 0
   default: true
 
 BTCREGNetwork:
   name: BTCREGNetwork
   rpc_uri: http://regtest-net:7nluWvQfpWTewrCXpChUkoRShigXs29H@172.17.0.1:10482
   min_conf: 6
-  last_synced_block: -1
+  last_sync_height: 0
   default: false
 
 BTCTEST:
   name: BTCTEST
   rpc_uri: http://regtest-wallet:7nluWvQfpWTewrCXpChUkoRShigXs29H@172.17.0.1:10782
   min_conf: 6
-  last_synced_block: -1
+  last_sync_height: 0
   default: false
 
