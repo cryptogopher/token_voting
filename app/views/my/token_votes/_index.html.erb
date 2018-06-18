@@ -3,6 +3,7 @@
     <tr>
       <th class="id">#</th>
       <th class="subject">Subject</th>
+      <th class="token">Status</th>
       <th class="token">Token</th>
       <th class="address">Address</th>
       <th class="expiration">Expiration</th>
@@ -18,6 +19,7 @@
         <td class="subject">
           <%= link_to token_vote.issue.subject, issue_path(token_vote.issue) %>
         </td>
+        <td class="status"><%= token_vote.issue.status %></td>
         <td class="token"><%= token_vote.token %></td>
         <td class="address"><%= token_vote.address %></td>
         <td class="expiration"><%= format_date(token_vote.expiration) %></td>
