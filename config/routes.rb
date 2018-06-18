@@ -7,9 +7,9 @@ resources :issues do
       resources :token_votes, :controller => 'token_votes', :only => [:create, :destroy]
     end
 end
-get 'token_votes/walletnotify/:tt_name/:txid', to: 'token_votes#walletnotify',
+get 'token_votes/walletnotify/:token_type_name/:txid', to: 'token_votes#walletnotify',
   as: 'walletnotify_token_vote'
-get 'token_votes/blocknotify/:tt_name/:blockhash', to: 'token_votes#blocknotify',
+get 'token_votes/blocknotify/:token_type_name/:blockhash', to: 'token_votes#blocknotify',
   as: 'blocknotify_token_vote'
 
 get 'my/token_votes', to: 'my#token_votes', as: 'my_token_votes'

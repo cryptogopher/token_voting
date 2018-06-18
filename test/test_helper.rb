@@ -138,11 +138,11 @@ module TokenVoting
       # Expecting to work with at least 2 nodes: one working as wallet and the
       # other as rest of network (from where payments are incoming).
       # Configurations for bitcoind are in test/configs/bitcoind-regtest-* dirs.
-      @network = RPC.get_rpc('BTCREGNetwork')
+      @network = RPC.get_rpc(token_types(:BTCREGNetwork))
       if @network.get_wallet_info['balance'] < 100.0
         @network.generate(110)
       end
-      @wallet = RPC.get_rpc('BTCREG')
+      @wallet = RPC.get_rpc(token_types(:BTCREG))
 
       @notifications = Hash.new(0)
       ActiveSupport::Notifications.subscribe 'process_action.action_controller' do |*args|

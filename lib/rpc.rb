@@ -7,13 +7,13 @@ module RPC
 
   module_function
 
-  def get_rpc(tt_name, uri = nil)
+  def get_rpc(token_type, uri = nil)
     begin
-      rpc_class = RPC.const_get(tt_name.to_sym) 
+      rpc_class = RPC.const_get(token_type.name.to_sym) 
     rescue
-      raise(Error, "No RPC class for: #{tt_name}")
+      raise(Error, "No RPC class for: #{token_type.name.to_sym}")
     end
-    rpc_class.new(uri || TokenType.find_by_name(tt_name).rpc_uri)
+    rpc_class.new(uri || token_type.rpc_uri)
   end
 end
 

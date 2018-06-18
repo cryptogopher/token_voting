@@ -142,7 +142,7 @@ class TokenVote < ActiveRecord::Base
   def generate_address
     raise Error, 'Re-generating existing address' if self.address
 
-    rpc = RPC.get_rpc(self.token_type.name)
+    rpc = RPC.get_rpc(self.token_type)
     # Is there more efficient way to generate unique addressess using RPC?
     # (under all circumstances, including removing wallet file from RPC daemon)
     begin
@@ -153,7 +153,7 @@ class TokenVote < ActiveRecord::Base
   end
 
   def update_amounts
-    rpc = RPC.get_rpc(self.token_type.name)
+    rpc = RPC.get_rpc(self.token_type)
     # FIXME?: get_received_by_address does not count coinbase txs
     self.amount_conf = 
       rpc.get_received_by_address(self.address, self.token_type.min_conf)
@@ -176,11 +176,11 @@ class TokenVote < ActiveRecord::Base
     return total_stats
   end
 
-  def self.update_txn_amounts(tt_name, txid)
-    token_type = TokenTypes.find_by_name(tt_name)
-    raise Error, "Invalid token type name: #{tt_name}" unless token_type
+  def self.update_txn_amounts(token_type_name, txid)
+    token_type = TokenTypes.find_by_name(token_type_name)
+    raise Error, "Invalid token type name: #{token_type_name}" unless token_type
 
-    rpc = RPC.get_rpc(token_type.name)
+    rpc = RPC.get_rpc(token_type)
     addresses = rpc.get_tx_addresses(txid)
     TokenVote.where(token_type: token_type, address: addresses).each do |tv|
       tv.update_amounts
@@ -188,11 +188,11 @@ class TokenVote < ActiveRecord::Base
     end
   end
 
-  def self.update_unconfirmed_amounts(tt_name, blockhash)
-    token_type = TokenTypes.find_by_name(tt_name)
-    raise Error, "Invalid token type name: #{tt_name}" unless token_type
+  def self.update_unconfirmed_amounts(token_type_name, blockhash)
+    token_type = TokenTypes.find_by_name(token_type_name)
+    raise Error, "Invalid token type name: #{token_type_name}" unless token_type
 
-    rpc = RPC.get_rpc(token_type.name)
+    rpc = RPC.get_rpc(token_type)
     TokenVote.where('token_type_id = ? and amount_unconf != 0', token_type.id).each do |tv|
       tv.update_amounts
       tv.save!
