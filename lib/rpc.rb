@@ -4,6 +4,7 @@ module RPC
       "Wallet RPC call error: #{super}"
     end
   end
+  class InvalidAddressOrKey < Error; end
 
   module_function
 

@@ -144,7 +144,7 @@ module TokenVoting
       end
       btcreg = token_types(:BTCREG)
       @wallet = RPC.get_rpc(btcreg)
-      btcreg.last_sync_height = @wallet.get_block_count
+      btcreg.prev_sync_height = @wallet.get_block_count
       btcreg.save!
 
       @notifications = Hash.new(0)

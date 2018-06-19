@@ -14,8 +14,23 @@ module RPC
     end
 
     def get_tx_addresses(txid)
-      tx = self.gettransaction(txid)
-      addresses = tx['details'].map { |detail| detail['address'] }
+      tx = self.get_raw_transaction(txid, true)
+      input_vouts = []
+      tx['vin'].each do |vin|
+        begin
+          input_vouts << self.get_raw_transaction(vin['txid'], true)['vout'][vin['vout']]
+        rescue RPC::InvalidAddressOrKey
+          # bitcoind does not provide rawtx for txs not affecting wallet if
+          # txindex is disabled. This is not a problem as we're only interested in
+          # wallet transactions here.
+        end
+      end
+      [input_vouts, tx['vout']].map do |vouts|
+        vouts.map! do |vout|
+          vout['scriptPubKey']['addresses']
+        end
+        vouts.flatten
+      end
     end
 
     protected
@@ -31,7 +46,12 @@ module RPC
 
       response = JSON.parse(post_http_request(post_body))
       if response['error']
-        raise Error, response['error']
+        case response['error']['code']
+        when -5
+          raise InvalidAddressOrKey, response['error']['message']
+        else
+          raise Error, "#{response['error']['code']} #{response['error']['message']}"
+        end
       end
       response['result']
     end
@@ -46,13 +66,11 @@ module RPC
       request.body = post_body
       begin
         response = http.request(request)
-        #puts response
-        #puts request.body
       rescue StandardError => e
         raise Error, e.message
       end
-      unless response.kind_of? Net::HTTPSuccess
-        raise Error, response.message
+      unless response.class.body_permitted?
+        raise Error, "#{response.code} #{response.message}"
       end
       response.body
     end

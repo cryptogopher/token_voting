@@ -208,8 +208,8 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
 
     # don't count outgoing transfers
     assert_notifications 'blocknotify' => min_conf do
-      @network.send_to_address(vote1.address, 0.12)
       @wallet.send_to_address(@network.get_new_address, 0.6, '', '', true)
+      @network.send_to_address(vote1.address, 0.12)
       @network.generate(min_conf)
     end
     vote1.reload
@@ -268,6 +268,20 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     end
 
     # TODO: get /my/token_votes page and check for valid content
+  end
+
+  def test_rpc_get_tx_addresses
+    address = @wallet.get_new_address
+    txid = nil
+    assert_notifications 'blocknotify' => 1 do
+      txid = @network.send_to_address(address, 0.1)
+      @network.generate(1)
+    end
+    assert txid
+    inputs, outputs = @wallet.get_tx_addresses(txid)
+    assert_operator 0, :<, inputs.length
+    assert_includes [1, 2], outputs.length
+    assert_includes outputs, address
   end
 end
 

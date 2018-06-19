@@ -181,10 +181,10 @@ class TokenVote < ActiveRecord::Base
     raise Error, "Invalid token type name: #{token_type_name}" unless type
 
     rpc = RPC.get_rpc(type)
-    addresses = rpc.get_tx_addresses(txid)
-    TokenVote.where(token_type: type, address: addresses).each do |tv|
-      tv.update_amounts
-      tv.save!
+    inputs, outputs = rpc.get_tx_addresses(txid)
+    TokenVote.where(address: inputs+outputs, token_type: type).each do |vote|
+      vote.update_amounts
+      vote.save!
     end
   end
 
@@ -201,22 +201,26 @@ class TokenVote < ActiveRecord::Base
     # - amount_conf/_unconf must be updated for all confirmed txs, as 
     # 'walletnotify' may miss txs and they won't show as unconfirmed.
     # (so it is not enough to update amounts of unconfirmed txs here).
-    blockhash = rpc.get_block_hash(type.last_sync_height)
-    incoming_txs = rpc.list_since_block(blockhash, type.min_conf, true)
-    last_block_height = rpc.get_block(incoming_txs['lastblock'])['height']
-    incoming_conf_txs = incoming_txs['transactions'].select do |tx|
-      tx['confirmations'] >= type.min_conf
-    end
+    prev_blockhash = rpc.get_block_hash(type.prev_sync_height)
+    incoming_txs = rpc.list_since_block(prev_blockhash, type.min_conf, true)
+    next_block_height = rpc.get_block(incoming_txs['lastblock'])['height']
+    return if type.prev_sync_height >= next_block_height
+
+    #puts "GET processing from #{prev_blockhash}/#{type.prev_sync_height} to #{incoming_txs['lastblock']}/#{next_block_height}"
 
     TokenVote.transaction do
-      incoming_conf_txs.each do |tx|
-        if vote = TokenVote.find_by(address: tx['address'], token_type: type)
-          vote.amount_in += tx['amount'] if tx['category'] == 'receive'
+      incoming_txs['transactions'].each do |tx|
+        inputs, outputs = rpc.get_tx_addresses(tx['txid'])
+        TokenVote.where(address: inputs+outputs, token_type: type).each do |vote|
+          if vote.address == tx['address'] && tx['category'] == 'receive' &&
+              tx['confirmations'] >= type.min_conf
+            vote.amount_in += tx['amount']
+          end
           vote.update_amounts
           vote.save!
         end
       end
-      type.last_sync_height = last_block_height
+      type.prev_sync_height = next_block_height
       type.save!
     end
   end
