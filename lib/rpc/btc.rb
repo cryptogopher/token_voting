@@ -13,6 +13,7 @@ module RPC
       end
     end
 
+    # Gets tuple of [[inputs], [outputs]] addresses for txid.
     def get_tx_addresses(txid)
       tx = self.get_raw_transaction(txid, true)
       input_vouts = []
@@ -20,7 +21,7 @@ module RPC
         begin
           input_vouts << self.get_raw_transaction(vin['txid'], true)['vout'][vin['vout']]
         rescue RPC::InvalidAddressOrKey
-          # bitcoind does not provide rawtx for txs not affecting wallet if
+          # getrawtransaction does not provide rawtx for txs not affecting wallet if
           # txindex is disabled. This is not a problem as we're only interested in
           # wallet transactions here.
         end
@@ -31,6 +32,13 @@ module RPC
         end
         vouts.flatten
       end
+    end
+
+    # getmempoolentry which does not throw exception if txid is not in mempool.
+    def get_mempool_entry(txid)
+      self.getmempoolentry(txid)
+    rescue RPC::InvalidAddressOrKey
+      {}
     end
 
     protected

@@ -183,19 +183,34 @@ module TokenVoting
       ActiveSupport::Notifications.unsubscribe 'process_action.action_controller'
     end
 
-    # Waits for expected number of notifications to occur with regard to timeout.
+    # Waits for expected number of notifications to occur before timeout.
     # Also checks if there were no superfluous notifications after completion.
     def assert_notifications(expected={})
       @notifications.clear
       expected.each { |k,v| @notifications[k] = 0 }
       yield
-      Timeout.timeout(3) do
-        sleep 0.1 until expected.all? { |k,v| @notifications[k] >= v }
-      end
 
-      # catch superfluous notifications if any
-      sleep 0.5
-      assert_operator expected, :<=, @notifications
+      begin
+        Timeout.timeout(3) do
+          sleep 0.1 until expected <= @notifications
+        end
+      rescue Timeout::Error
+        # do nothing, final assert checks validity of result
+      ensure
+        # catch superfluous notifications if any
+        sleep 0.5
+        assert_operator expected, :<=, @notifications
+      end
+    end
+
+    # Waits for tx to arrive into node's mempool before timeout.
+    def assert_in_mempool(node, txid)
+      #byebug
+      Timeout.timeout(10) do
+        sleep 0.1 while node.get_mempool_entry(txid).empty?
+      end
+    rescue Timeout::Error
+      raise Timeout::Error, "Timeout while waiting on #{node} for txid #{txid}."
     end
   end
 end
