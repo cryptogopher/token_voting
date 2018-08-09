@@ -30,7 +30,7 @@ Redmine::Plugin.register :token_voting do
   settings default: {
     'default_token' => :BTCTEST,
     'checkpoints' => {
-      'statuses' => [IssueStatus.all.where(is_closed: true).pluck(:id),],
+      'statuses' => [IssueStatus.table_exists? && IssueStatus.all.where(is_closed: true).pluck(:id),],
       'shares' => [1.0]
     },
     'BTC' => {

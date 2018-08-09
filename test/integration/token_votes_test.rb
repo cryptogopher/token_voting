@@ -8,6 +8,9 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
   def setup
     super
     setup_plugin
+
+    @issue1 = issues(:issue_01)
+    @issue2 = issues(:issue_02)
   end
 
   def teardown
@@ -15,98 +18,114 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     logout_user
   end
 
-  def test_create_only_if_authorized_and_has_permissions
-    issue = issues(:issue_01)
-    roles = users(:alice).members.find_by(project: issue.project_id).roles
-
-    # cannot create without logging in
+  def test_create_token_vote_by_anonymous_should_fail
+    logout_user
     assert_no_difference 'TokenVote.count' do
-      post "#{issue_token_votes_path(issue)}.js", params: {
+      post "#{issue_token_votes_path(@issue1)}.js", params: {
         token_vote: { token: 'BTCREG', duration: 1.day }
       }
     end
     assert_response :unauthorized
+  end
 
-    # cannot create without permissions
+  def test_create_token_vote_without_permissions_should_fail
+    roles = users(:alice).members.find_by(project: @issue1.project_id).roles
     roles.each { |role| role.remove_permission! :manage_token_votes }
+
     log_user 'alice', 'foo'
     assert_no_difference 'TokenVote.count' do
-      post "#{issue_token_votes_path(issue)}.js", params: {
+      post "#{issue_token_votes_path(@issue1)}.js", params: {
         token_vote: { token: 'BTCREG', duration: 1.day }
       }
     end
     assert_response :forbidden
-    roles.first.add_permission! :manage_token_votes
+  end
 
-    # can create
-    create_token_vote(issue)
+  def test_create_token_vote
+    log_user 'alice', 'foo'
+    create_token_vote
     # TODO: get issue page and check for valid content
   end
 
-  def test_destroy_only_if_authorized_and_deletable
-    issue = issues(:issue_01)
-
-    # create vote for destruction
+  def test_destroy_token_vote_by_anonymous_shoulf_fail
     log_user 'alice', 'foo'
-    vote1 = create_token_vote(issue)
-    vote2 = create_token_vote(issue)
+    vote1 = create_token_vote
     logout_user
 
-    # cannot destroy without logging in
     assert_no_difference 'TokenVote.count' do
       delete "#{token_vote_path(vote1)}.js"
     end
     assert_response :unauthorized
+  end
 
-    # cannot destroy if not owner
+  def test_destroy_token_vote_by_non_owner_should_fail
+    log_user 'alice', 'foo'
+    vote1 = create_token_vote
+    logout_user
+
     log_user 'bob', 'foo'
     assert_no_difference 'TokenVote.count' do
       delete "#{token_vote_path(vote1)}.js"
     end
     assert_response :forbidden
-    logout_user
+  end
 
-    # cannot destroy without permissions
+  def test_destroy_token_vote_without_permissions_should_fail
     log_user 'alice', 'foo'
-    roles = users(:alice).members.find_by(project: issue.project_id).roles
+    vote1 = create_token_vote
+
+    roles = users(:alice).members.find_by(project: @issue1.project_id).roles
     roles.each { |role| role.remove_permission! :manage_token_votes }
+
     assert_no_difference 'TokenVote.count' do
       delete "#{token_vote_path(vote1)}.js"
     end
     assert_response :forbidden
-    roles.first.add_permission! :manage_token_votes
+  end
 
-    # TODO: test for destruction without issue visibility
+  # TODO: test for destruction without issue visibility
 
-    # cannot destroy if funded with unconfirmed tx
+  def test_destroy_token_vote_funded_with_unconfirmed_tx_should_fail
+    log_user 'alice', 'foo'
+    vote1 = create_token_vote
+
     assert_notifications 'walletnotify' => 1, 'blocknotify' => 0 do
-      @network.send_to_address(vote2.address, 0.2)
+      txid = @network.send_to_address(vote1.address, 0.2)
+      assert_in_mempool @wallet, txid
     end
-    vote2.reload
-    assert_equal vote2.amount_unconf, 0.2
+    vote1.reload
+    assert_equal vote1.amount_unconf, 0.2
     assert_no_difference 'TokenVote.count' do
-      delete "#{token_vote_path(vote2)}.js"
+      delete "#{token_vote_path(vote1)}.js"
     end
     assert_response :forbidden
+  end
 
-    # cannot destroy if funded with confirmed tx
-    min_conf = vote2.token_type.min_conf
-    assert_notifications 'walletnotify' => 1, 'blocknotify' => min_conf do
+  def test_destroy_token_vote_funded_with_confirmed_tx_should_fail
+    log_user 'alice', 'foo'
+    vote1 = create_token_vote
+
+    min_conf = vote1.token_type.min_conf
+    assert_notifications 'blocknotify' => min_conf do
+      @network.send_to_address(vote1.address, 0.2)
       @network.generate(min_conf)
     end
-    vote2.reload
-    assert_equal vote2.amount_conf, 0.2
+    vote1.reload
+    assert_equal vote1.amount_conf, 0.2
     assert_no_difference 'TokenVote.count' do
-      delete "#{token_vote_path(vote2)}.js"
+      delete "#{token_vote_path(vote1)}.js"
     end
     assert_response :forbidden
+  end
 
-    # can destroy
+  def test_destroy_token_vote
+    log_user 'alice', 'foo'
+    vote1 = create_token_vote
     destroy_token_vote(vote1)
     # TODO: get issue page and check for valid content
   end
 
-  def test_amount_conf_amount_unconf_update_on_walletnotify_and_blocknotify
+  def test_blocknotify_and_walletnotify_update_amount_conf_and_amount_unconf
     # For these tests to be executed successfully bitcoind regtest daemon must be
     # configured with 'walletnotify' and 'blocknotify' options properly.
     # 'walletnotify' occurs after:
@@ -120,7 +139,8 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
 
     # walletnotify on receiving payment
     assert_notifications 'walletnotify' => 1, 'blocknotify' => 0 do
-      @network.send_to_address(vote1.address, 1.0)
+      txid = @network.send_to_address(vote1.address, 1.0)
+      assert_in_mempool @wallet, txid
     end
     [vote1, vote2].map(&:reload)
     assert_equal vote1.amount_unconf, 1.0
@@ -139,8 +159,9 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
 
     # walletnotify on additional payments incl. different vote
     assert_notifications 'walletnotify' => 2, 'blocknotify' => 0 do
-      @network.send_to_address(vote1.address, 0.5)
-      @network.send_to_address(vote2.address, 2.33)
+      txid1 = @network.send_to_address(vote1.address, 0.5)
+      txid2 = @network.send_to_address(vote2.address, 2.33)
+      assert_in_mempool @wallet, txid1, txid2
     end
     [vote1, vote2].map(&:reload)
     assert_equal vote1.amount_unconf, 1.5
@@ -148,7 +169,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     assert_equal vote2.amount_unconf, 2.33
 
     # walletnotify on additional confirmations incl. different vote
-    # amount unconfirmed untill min_conf blocks
+    # amount unconfirmed until min_conf blocks
     min_conf = vote1.token_type.min_conf
     assert_operator min_conf, :>, 2
     assert_notifications 'walletnotify' => 2, 'blocknotify' => (min_conf-2) do
@@ -178,7 +199,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     assert_equal vote2.amount_conf, 2.33
   end
 
-  def test_amount_in_update_on_blocknotify
+  def test_blocknotify_updates_amount_in
     log_user 'alice', 'foo'
     vote1 = create_token_vote
 
@@ -189,42 +210,45 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
       @network.generate(1)
     end
     vote1.reload
-    assert_equal 0, vote1.amount_in
     assert_equal 1.45, vote1.amount_unconf
+    assert_equal 0, vote1.amount_conf
+    assert_equal 0, vote1.amount_in
 
     assert_notifications 'blocknotify' => min_conf-2 do
       @network.generate(min_conf-2)
     end
     vote1.reload
-    assert_equal 0, vote1.amount_in
+    assert_equal 1.45, vote1.amount_unconf
     assert_equal 0, vote1.amount_conf
+    assert_equal 0, vote1.amount_in
 
     # count after confirmation
     assert_notifications 'blocknotify' => 1 do
       @network.generate(1)
     end
     vote1.reload
-    assert_equal vote1.amount_in, 1.45
+    assert_equal 0, vote1.amount_unconf
+    assert_equal 1.45, vote1.amount_conf
+    assert_equal 1.45, vote1.amount_in
 
     # don't count outgoing transfers
     assert_notifications 'blocknotify' => min_conf do
       # TODO: send from vote1.address with raw tx
-      @wallet.send_to_address(@network.get_new_address, 0.6, '', '', true)
+      #@wallet.send_to_address(@network.get_new_address, 0.6, '', '', true)
+      txid = @wallet.send_from_address(vote1.address, @network.get_new_address, 0.6)
+      assert_in_mempool @network, txid
       @network.send_to_address(vote1.address, 0.12)
       @network.generate(min_conf)
     end
     vote1.reload
-    assert_equal 1.57, vote1.amount_in
     assert_equal 0.97, vote1.amount_conf
-
+    assert_equal 1.57, vote1.amount_in
 
     #FIXME: check with send_from_address
   end
 
   def test_status_after_time_and_issue_status_change
     log_user 'alice', 'foo'
-    issue1 = issues(:issue_01)
-    issue2 = issues(:issue_02)
 
     # Resolve issue1 between 8.days and 8.days+1.minute
     # #0 - completed: 0 - 1.month
@@ -235,16 +259,16 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     # #5 - issue2, expired: 7.days-8.days
     votes = []
     [
-      [issue1, 0,                1.month], #0
-      [issue1, 1.day,            1.week], #1
-      [issue1, 1.day+5.seconds,  issue_statuses(:resolved)],
-      [issue1, 1.day+1.minute,   1.week], #2
-      [issue1, 1.week-1.minute,  1.day], #3
-      [issue1, 1.week-5.seconds, issue_statuses(:pulled)],
-      [issue2, 1.week,           1.week], #4
-      [issue2, 1.week,           1.day], #5
-      [issue2, 1.week+1.minute,  issue_statuses(:pulled)],
-      [issue1, 8.days+5.seconds, issue_statuses(:closed)],
+      [@issue1, 0,                1.month], #0
+      [@issue1, 1.day,            1.week], #1
+      [@issue1, 1.day+5.seconds,  issue_statuses(:resolved)],
+      [@issue1, 1.day+1.minute,   1.week], #2
+      [@issue1, 1.week-1.minute,  1.day], #3
+      [@issue1, 1.week-5.seconds, issue_statuses(:pulled)],
+      [@issue2, 1.week,           1.week], #4
+      [@issue2, 1.week,           1.day], #5
+      [@issue2, 1.week+1.minute,  issue_statuses(:pulled)],
+      [@issue1, 8.days+5.seconds, issue_statuses(:closed)],
     ].each do |issue, t, value|
       travel(t) do
         if value.kind_of?(IssueStatus)
@@ -256,18 +280,18 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     end
 
     travel(8.days+30.seconds) do
-      assert_equal issue1.token_votes.active.map(&:id),
+      assert_equal @issue1.token_votes.active.map(&:id),
         []
-      assert_equal issue1.token_votes.completed.map(&:id).sort,
+      assert_equal @issue1.token_votes.completed.map(&:id).sort,
         [votes[0].id, votes[2].id].sort
-      assert_equal issue1.token_votes.expired.map(&:id).sort,
+      assert_equal @issue1.token_votes.expired.map(&:id).sort,
         [votes[1].id, votes[3].id].sort
  
-      assert_equal issue2.token_votes.active.map(&:id),
+      assert_equal @issue2.token_votes.active.map(&:id),
         [votes[4].id]
-      assert_equal issue2.token_votes.completed.map(&:id),
+      assert_equal @issue2.token_votes.completed.map(&:id),
         []
-      assert_equal issue2.token_votes.expired.map(&:id),
+      assert_equal @issue2.token_votes.expired.map(&:id),
         [votes[5].id]
     end
 

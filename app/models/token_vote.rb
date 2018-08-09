@@ -154,11 +154,13 @@ class TokenVote < ActiveRecord::Base
 
   def update_amounts
     rpc = RPC.get_rpc(self.token_type)
-    # FIXME?: get_received_by_address does not count coinbase txs
-    self.amount_conf = 
-      rpc.get_received_by_address(self.address, self.token_type.min_conf)
-    self.amount_unconf = 
-      rpc.get_received_by_address(self.address, 0) - self.amount_conf
+    # TODO: does it count coinbase txs?
+    utxos = rpc.list_unspent(0, 9999999, [self.address])
+    utxos_conf, utxos_unconf =
+      utxos.partition { |utxo| utxo['confirmations'] >= self.token_type.min_conf }
+
+    self.amount_conf = utxos_conf.sum { |utxo| utxo['amount'] }
+    self.amount_unconf = utxos_unconf.sum { |utxo| utxo['amount'] }
   end
 
   def self.compute_stats(token_votes)
@@ -200,7 +202,7 @@ class TokenVote < ActiveRecord::Base
     # (completed votes have this amount specified in TokenPayouts).
     # - amount_conf/_unconf must be updated for all confirmed txs, as 
     # 'walletnotify' may miss txs and they won't show as unconfirmed.
-    # (so it is not enough to update amounts of unconfirmed txs here).
+    # (so it is not enough to update amounts only for amount_unconf > 0 votes here).
     prev_blockhash = rpc.get_block_hash(type.prev_sync_height)
     incoming_txs = rpc.list_since_block(prev_blockhash, type.min_conf, true)
     next_block_height = rpc.get_block(incoming_txs['lastblock'])['height']

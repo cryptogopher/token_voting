@@ -204,13 +204,12 @@ module TokenVoting
     end
 
     # Waits for tx to arrive into node's mempool before timeout.
-    def assert_in_mempool(node, txid)
-      #byebug
+    def assert_in_mempool(node, *txids)
       Timeout.timeout(10) do
-        sleep 0.1 while node.get_mempool_entry(txid).empty?
+        sleep 0.1 unless txids.keep_if { |txid| node.get_mempool_entry(txid).empty? } .empty?
       end
     rescue Timeout::Error
-      raise Timeout::Error, "Timeout while waiting on #{node} for txid #{txid}."
+      raise Timeout::Error, "Timeout while waiting on #{node} for txids #{txids}."
     end
   end
 end
