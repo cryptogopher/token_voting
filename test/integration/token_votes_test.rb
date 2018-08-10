@@ -267,24 +267,26 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
   def test_rpc_send_from_address
     log_user 'alice', 'foo'
     vote1 = create_token_vote
+    vote2 = create_token_vote
 
     assert_operator min_conf = vote1.token_type.min_conf, :>, 2
     assert_notifications 'blocknotify' => min_conf do
       @network.send_to_address(vote1.address, 1.45)
       @network.generate(min_conf)
     end
-    vote1.reload
+    [vote1, vote2].map(&:reload)
     assert_equal 0, vote1.amount_unconf
     assert_equal 1.45, vote1.amount_conf
 
     assert_notifications 'blocknotify' => min_conf do
-      txid = @wallet.send_from_address(vote1.address, @network.get_new_address, 0.6)
+      txid = @wallet.send_from_address(vote1.address, vote2.address, 0.6)
       assert_in_mempool @network, txid
       @network.send_to_address(vote1.address, 0.12)
       @network.generate(min_conf)
     end
-    vote1.reload
+    [vote1, vote2].map(&:reload)
     assert_equal 0.97, vote1.amount_conf
+    assert_equal 0.599, vote2.amount_conf
   end
 end
 
