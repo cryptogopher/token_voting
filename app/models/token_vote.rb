@@ -35,8 +35,8 @@ class TokenVote < ActiveRecord::Base
   validates :duration, inclusion: { in: DURATIONS.values }
   validates :expiration, :address, presence: true
   validates :address, uniqueness: true
-  validates :amount_conf, :amount_in, numericality: { grater_than_or_equal_to: 0 }
-  validates :amount_unconf, numericality: true
+  validates :amount_conf, :amount_unconf, :pending_withdrawals,
+    numericality: { grater_than_or_equal_to: 0 }
 
   after_initialize :set_defaults
 
@@ -46,7 +46,7 @@ class TokenVote < ActiveRecord::Base
   end
 
   def funded?
-    self.amount_unconf > 0 || self.amount_in > 0
+    self.amount_unconf > 0 || self.amount_conf > 0
   end
 
   def visible?(user = User.current)
@@ -196,10 +196,7 @@ class TokenVote < ActiveRecord::Base
 
     rpc = RPC.get_rpc(type)
 
-    # Update amount_in/_conf/_unconf for txs confirmed since last synced block.
-    # - amount_in specifies total amount of incoming transactions to address.
-    # It is necessary to compute how much can be withdrawn from 'expired' vote
-    # (completed votes have this amount specified in TokenPayouts).
+    # Update amount_conf/_unconf for txs confirmed since last synced block.
     # - amount_conf/_unconf must be updated for all confirmed txs, as 
     # 'walletnotify' may miss txs and they won't show as unconfirmed.
     # (so it is not enough to update amounts only for amount_unconf > 0 votes here).
@@ -214,10 +211,6 @@ class TokenVote < ActiveRecord::Base
       incoming_txs['transactions'].each do |tx|
         inputs, outputs = rpc.get_tx_addresses(tx['txid'])
         TokenVote.where(address: inputs+outputs, token_type: type).each do |vote|
-          if vote.address == tx['address'] && tx['category'] == 'receive' &&
-              tx['confirmations'] >= type.min_conf
-            vote.amount_in += tx['amount']
-          end
           vote.update_amounts
           vote.save!
         end
@@ -234,8 +227,8 @@ class TokenVote < ActiveRecord::Base
       self.duration ||= 1.month
       self.token_type ||= TokenType.find_by_default(true) || TokenType.all.first
       self.amount_conf ||= 0
-      self.amount_in ||= 0
       self.amount_unconf ||= 0
+      self.pending_withdrawals ||= 0
       self.is_completed ||= false
     end
   end

@@ -199,54 +199,6 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     assert_equal vote2.amount_conf, 2.33
   end
 
-  def test_blocknotify_updates_amount_in
-    log_user 'alice', 'foo'
-    vote1 = create_token_vote
-
-    # don't count unless confirmed
-    assert_operator min_conf = vote1.token_type.min_conf, :>, 2
-    assert_notifications 'blocknotify' => 1 do
-      @network.send_to_address(vote1.address, 1.45)
-      @network.generate(1)
-    end
-    vote1.reload
-    assert_equal 1.45, vote1.amount_unconf
-    assert_equal 0, vote1.amount_conf
-    assert_equal 0, vote1.amount_in
-
-    assert_notifications 'blocknotify' => min_conf-2 do
-      @network.generate(min_conf-2)
-    end
-    vote1.reload
-    assert_equal 1.45, vote1.amount_unconf
-    assert_equal 0, vote1.amount_conf
-    assert_equal 0, vote1.amount_in
-
-    # count after confirmation
-    assert_notifications 'blocknotify' => 1 do
-      @network.generate(1)
-    end
-    vote1.reload
-    assert_equal 0, vote1.amount_unconf
-    assert_equal 1.45, vote1.amount_conf
-    assert_equal 1.45, vote1.amount_in
-
-    # don't count outgoing transfers
-    assert_notifications 'blocknotify' => min_conf do
-      # TODO: send from vote1.address with raw tx
-      #@wallet.send_to_address(@network.get_new_address, 0.6, '', '', true)
-      txid = @wallet.send_from_address(vote1.address, @network.get_new_address, 0.6)
-      assert_in_mempool @network, txid
-      @network.send_to_address(vote1.address, 0.12)
-      @network.generate(min_conf)
-    end
-    vote1.reload
-    assert_equal 0.97, vote1.amount_conf
-    assert_equal 1.57, vote1.amount_in
-
-    #FIXME: check with send_from_address
-  end
-
   def test_status_after_time_and_issue_status_change
     log_user 'alice', 'foo'
 
@@ -313,27 +265,26 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
   end
 
   def test_rpc_send_from_address
-    address = @wallet.get_new_address
-    assert_equal 0, @wallet.get_received_by_address(address)
-    txid1 = nil
-    assert_notifications 'blocknotify' => 1 do
-      txid1 = @network.send_to_address(address, 1.6)
-      @network.generate(1)
-    end
-    assert txid1
-    assert_equal 1.6, @wallet.get_received_by_address(address)
+    log_user 'alice', 'foo'
+    vote1 = create_token_vote
 
-    net_address = @network.get_new_address
-    assert_equal 0, @network.get_received_by_address(net_address)
-    txid2 = nil
-    assert_notifications 'blocknotify' => 1, 'walletnotify' => 2 do
-      txid2 = @wallet.send_from_address(address, net_address, 0.4)
-      assert_in_mempool @network, txid2
-      @network.generate(1)
+    assert_operator min_conf = vote1.token_type.min_conf, :>, 2
+    assert_notifications 'blocknotify' => min_conf do
+      @network.send_to_address(vote1.address, 1.45)
+      @network.generate(min_conf)
     end
-    assert txid2
-    assert_equal 0.399, @network.get_received_by_address(net_address)
-    assert_equal 1.2, @wallet.get_received_by_address(address)
+    vote1.reload
+    assert_equal 0, vote1.amount_unconf
+    assert_equal 1.45, vote1.amount_conf
+
+    assert_notifications 'blocknotify' => min_conf do
+      txid = @wallet.send_from_address(vote1.address, @network.get_new_address, 0.6)
+      assert_in_mempool @network, txid
+      @network.send_to_address(vote1.address, 0.12)
+      @network.generate(min_conf)
+    end
+    vote1.reload
+    assert_equal 0.97, vote1.amount_conf
   end
 end
 
