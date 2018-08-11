@@ -11,6 +11,8 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
 
     @issue1 = issues(:issue_01)
     @issue2 = issues(:issue_02)
+
+    Rails.logger.info "TEST #{name}"
   end
 
   def teardown
@@ -91,7 +93,6 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
 
     assert_notifications 'walletnotify' => 1, 'blocknotify' => 0 do
       txid = @network.send_to_address(vote1.address, 0.2)
-      assert_in_mempool @wallet, txid
     end
     vote1.reload
     assert_equal vote1.amount_unconf, 0.2
@@ -99,6 +100,10 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
       delete "#{token_vote_path(vote1)}.js"
     end
     assert_response :forbidden
+
+    assert_notifications 'walletnotify' => 1, 'blocknotify' => 1 do
+      @network.generate(1)
+    end
   end
 
   def test_destroy_token_vote_funded_with_confirmed_tx_should_fail
@@ -125,81 +130,124 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     # TODO: get issue page and check for valid content
   end
 
-  def test_blocknotify_and_walletnotify_update_amount_conf_and_amount_unconf
-    # For these tests to be executed successfully bitcoind regtest daemon must be
-    # configured with 'walletnotify' and 'blocknotify' options properly.
-    # 'walletnotify' occurs after:
-    #  * first receiving a payment
-    #  * first confirmation on the payment
-    #  * you send a payment
-    
+  # For these tests to be executed successfully bitcoind regtest daemon must be
+  # configured with 'walletnotify' and 'blocknotify' options properly.
+  # 'walletnotify' occurs after:
+  #  * first receiving a payment (sometimes merged with first confirmation if
+  #  block generated immediately after); use assert_in_mempool to wait for tx to
+  #  arrive into @wallet mempool and generate this 'walletnotify'
+  #  * first confirmation on the payment
+  #  * you send a payment
+  # At the end of test, block should be generated so there are no unconfirmed
+  # txs which will potentially generate 'walletnotify' in subsequent functions.
+  # Running assert_in_mempool at the end of assert_notifications is redundant
+  # with waiting for 'walletnotify'.
+  # Testing notifications:
+  #   tail -f ../../log/test.log | egrep "(GET|POST|TEST)"
+  def test_walletnotify_after_first_receiving_payment
+    log_user 'alice', 'foo'
+    vote1 = create_token_vote
+
+    assert_notifications 'walletnotify' => 1, 'blocknotify' => 0 do
+      txid = @network.send_to_address(vote1.address, 2.0)
+    end
+    vote1.reload
+    assert_equal vote1.amount_unconf, 2.0
+    assert_equal vote1.amount_conf, 0
+
+    assert_notifications 'walletnotify' => 1, 'blocknotify' => 1 do
+      @network.generate(1)
+    end
+  end
+
+  def test_walletnotify_after_first_receiving_multiple_payments
     log_user 'alice', 'foo'
     vote1 = create_token_vote
     vote2 = create_token_vote
 
-    # walletnotify on receiving payment
-    assert_notifications 'walletnotify' => 1, 'blocknotify' => 0 do
-      txid = @network.send_to_address(vote1.address, 1.0)
-      assert_in_mempool @wallet, txid
-    end
-    [vote1, vote2].map(&:reload)
-    assert_equal vote1.amount_unconf, 1.0
-    assert_equal vote1.amount_conf, 0
-    assert_equal vote2.amount_unconf, 0
-
-    # walletnotify on 1st confirmation
-    # blocknotify on new block
-    assert_notifications 'walletnotify' => 1, 'blocknotify' => 1 do
-      @network.generate(1)
-    end
-    [vote1, vote2].map(&:reload)
-    assert_equal vote1.amount_unconf, 1.0
-    assert_equal vote1.amount_conf, 0
-    assert_equal vote2.amount_unconf, 0
-
-    # walletnotify on additional payments incl. different vote
     assert_notifications 'walletnotify' => 2, 'blocknotify' => 0 do
       txid1 = @network.send_to_address(vote1.address, 0.5)
       txid2 = @network.send_to_address(vote2.address, 2.33)
-      assert_in_mempool @wallet, txid1, txid2
-    end
-    [vote1, vote2].map(&:reload)
-    assert_equal vote1.amount_unconf, 1.5
-    assert_equal vote1.amount_conf, 0
-    assert_equal vote2.amount_unconf, 2.33
-
-    # walletnotify on additional confirmations incl. different vote
-    # amount unconfirmed until min_conf blocks
-    min_conf = vote1.token_type.min_conf
-    assert_operator min_conf, :>, 2
-    assert_notifications 'walletnotify' => 2, 'blocknotify' => (min_conf-2) do
-      @network.generate(min_conf-2)
-    end
-    [vote1, vote2].map(&:reload)
-    assert_equal vote1.amount_unconf, 1.5
-    assert_equal vote1.amount_conf, 0
-    assert_equal vote2.amount_unconf, 2.33
-
-    # amount confirmed after min_conf blocks
-    assert_notifications 'walletnotify' => 0, 'blocknotify' => 1 do
-      @network.generate(1)
     end
     [vote1, vote2].map(&:reload)
     assert_equal vote1.amount_unconf, 0.5
-    assert_equal vote1.amount_conf, 1.0
+    assert_equal vote1.amount_conf, 0
     assert_equal vote2.amount_unconf, 2.33
+    assert_equal vote2.amount_conf, 0
 
-    # all funds confirmed after enough blocks
-    assert_notifications 'walletnotify' => 0, 'blocknotify' => (min_conf*2) do
-      @network.generate(min_conf*2)
+    assert_notifications 'walletnotify' => 2, 'blocknotify' => 1 do
+      @network.generate(1)
     end
-    [vote1, vote2].map(&:reload)
-    assert_equal vote1.amount_unconf, 0
-    assert_equal vote1.amount_conf, 1.5
-    assert_equal vote2.amount_conf, 2.33
   end
 
-  def test_status_after_time_and_issue_status_change
+  def test_walletnotify_and_blocknotify_after_first_confirmation_of_payment
+    log_user 'alice', 'foo'
+    vote1 = create_token_vote
+
+    assert_notifications 'walletnotify' => 2, 'blocknotify' => 1 do
+      txid = @network.send_to_address(vote1.address, 0.6)
+      assert_in_mempool @wallet, txid
+      @network.generate(1)
+    end
+    vote1.reload
+    assert_equal vote1.amount_unconf, 0.6
+    assert_equal vote1.amount_conf, 0
+  end
+
+  def test_blocknotify_after_min_conf_minus_1_confirmations_of_payment
+    log_user 'alice', 'foo'
+    vote1 = create_token_vote
+    min_conf = vote1.token_type.min_conf
+
+    assert_operator min_conf, :>, 1
+    assert_notifications 'blocknotify' => (min_conf-1) do
+      txid = @network.send_to_address(vote1.address, 0.8)
+      @network.generate(min_conf-1)
+    end
+    vote1.reload
+    assert_equal vote1.amount_unconf, 0.8
+    assert_equal vote1.amount_conf, 0
+  end
+
+  def test_blocknotify_after_min_conf_confirmations_of_payment
+    log_user 'alice', 'foo'
+    vote1 = create_token_vote
+    min_conf = vote1.token_type.min_conf
+
+    assert_notifications 'blocknotify' => min_conf do
+      txid = @network.send_to_address(vote1.address, 1.2)
+      @network.generate(min_conf)
+    end
+    vote1.reload
+    assert_equal vote1.amount_unconf, 0.0
+    assert_equal vote1.amount_conf, 1.2
+  end
+
+  def test_blocknotify_after_confirmations_of_multiple_payments
+    log_user 'alice', 'foo'
+    vote1 = create_token_vote
+    vote2 = create_token_vote
+    min_conf = vote1.token_type.min_conf
+
+    assert_notifications 'blocknotify' => (min_conf+1) do
+      txid1 = @network.send_to_address(vote1.address, 0.7)
+      @network.generate(1)
+      txid2 = @network.send_to_address(vote1.address, 0.2)
+      @network.generate(1)
+      txid3 = @network.send_to_address(vote1.address, 1.1)
+      txid4 = @network.send_to_address(vote2.address, 0.5)
+      @network.generate(1)
+      txid5 = @network.send_to_address(vote2.address, 0.15)
+      @network.generate(min_conf-2)
+    end
+    [vote1, vote2].map(&:reload)
+    assert_equal vote1.amount_unconf, 1.1
+    assert_equal vote1.amount_conf, 0.9
+    assert_equal vote2.amount_unconf, 0.65
+    assert_equal vote2.amount_conf, 0.0
+  end
+
+  def test_issue_edit_hook_and_expiration_should_update_token_vote_status_scope
     log_user 'alice', 'foo'
 
     # Resolve issue1 between 8.days and 8.days+1.minute
@@ -248,6 +296,10 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     end
 
     # TODO: get /my/token_votes page and check for valid content
+  end
+
+  def test_issue_edit_hook_should_create_token_payouts_on_token_vote_completion
+    log_user 'alice', 'foo'
   end
 
   def test_rpc_get_tx_addresses

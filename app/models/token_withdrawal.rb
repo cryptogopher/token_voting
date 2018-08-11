@@ -28,11 +28,21 @@ class TokenWithdrawal < ActiveRecord::Base
   belongs_to :token_type
 
   validates :payee, :token_type, presence: true, associated: true
-  validates :amount, numericality: { grater_than_or_equal_to: 0 }
-  validates :address, uniqueness: true
+  validates :amount, numericality: { grater_than: 0 }
+  validates :address, presence: true
+
+  after_initialize :set_defaults
 
   scope :requested, -> { where(txid: nil) }
   scope :pending, -> { where.not(txid: nil).where(is_processed: false) }
   scope :processed, -> { where.not(txid: nil).where(is_processed: true) }
+
+  protected
+
+  def set_defaults
+    if new_record?
+      self.is_processed ||= false
+    end
+  end
 end
 

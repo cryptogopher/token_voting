@@ -1,4 +1,4 @@
 module RPC
-  class BTCREGNetwork < BTC
+  class BTCREGNetwork < BTCREG
   end
 end

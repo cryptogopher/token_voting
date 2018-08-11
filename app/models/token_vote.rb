@@ -34,11 +34,15 @@ class TokenVote < ActiveRecord::Base
   validates :voter, :issue, :token_type, presence: true, associated: true
   validates :duration, inclusion: { in: DURATIONS.values }
   validates :expiration, :address, presence: true
-  validates :address, uniqueness: true
+  validates :address, presence: true, uniqueness: true
   validates :amount_conf, :amount_unconf, :pending_withdrawals,
     numericality: { grater_than_or_equal_to: 0 }
 
   after_initialize :set_defaults
+
+  scope :active, -> { where(is_completed: false).where("expiration > ?", Time.current) }
+  scope :completed, -> { where(is_completed: true) }
+  scope :expired, -> { where(is_completed: false).where("expiration <= ?", Time.current) }
 
   def duration=(value)
     super(value.to_i)
@@ -66,10 +70,6 @@ class TokenVote < ActiveRecord::Base
   def expired?
     self.expiration <= Time.current && !self.completed?
   end
-
-  scope :active, -> { where(is_completed: false).where("expiration > ?", Time.current) }
-  scope :completed, -> { where(is_completed: true) }
-  scope :expired, -> { where(is_completed: false).where("expiration <= ?", Time.current) }
 
   # Updates 'is_completed' after issue edit and computes payouts on completion
   def self.issue_edit_hook(issue, journal)

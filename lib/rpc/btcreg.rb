@@ -9,8 +9,14 @@ module RPC
     #  raise Error, "Cannot import mining private key" if result
     #end
 
+    ## Make 'generate' synchronous so assert_notifications won't timeout due to
+    ## block generation time unpredictability.
     #def generate(n)
-    #  self.generate_to_address(n, @mining_address)
+    #  prev_block_count = self.get_block_count
+    #  super
+    #  Timeout.timeout(60) do
+    #    sleep 0.2 while self.get_block_count < prev_block_count+n
+    #  end
     #end
 
     def send_from_address(from_address, to_address, amount, fee_included=true)

@@ -191,22 +191,20 @@ module TokenVoting
       yield
 
       begin
-        Timeout.timeout(3) do
-          sleep 0.1 until expected <= @notifications
+        Timeout.timeout(5 + 10*expected['blocknotify']) do
+          sleep 0.5 until expected <= @notifications
         end
       rescue Timeout::Error
         # do nothing, final assert checks validity of result
-      ensure
-        # catch superfluous notifications if any
-        sleep 0.5
-        assert_operator expected, :<=, @notifications
       end
+
+      assert_operator expected, :<=, @notifications
     end
 
     # Waits for tx to arrive into node's mempool before timeout.
     def assert_in_mempool(node, *txids)
-      Timeout.timeout(10) do
-        sleep 0.1 unless txids.keep_if { |txid| node.get_mempool_entry(txid).empty? } .empty?
+      Timeout.timeout(5) do
+        sleep 0.5 unless txids.keep_if { |txid| node.get_mempool_entry(txid).empty? } .empty?
       end
     rescue Timeout::Error
       raise Timeout::Error, "Timeout while waiting on #{node} for txids #{txids}."
