@@ -150,7 +150,9 @@ module TokenVoting
       @notifications = Hash.new(0)
       ActiveSupport::Notifications.subscribe 'process_action.action_controller' do |*args|
         data = args.extract_options!
-        @notifications[data[:action]] += 1 if data[:controller] == 'TokenVotesController'
+        if ['blocknotify', 'walletnotify'].include?(data[:action])
+          @notifications[data[:action]] += 1
+        end
       end
 
       return if @@webrick
@@ -159,7 +161,8 @@ module TokenVoting
       server = WEBrick::HTTPServer.new(
         Port: 3000,
         Logger: WEBrick::Log.new("/dev/null"),
-        AccessLog: []
+        AccessLog: [],
+        MaxClients: 128
       )
       server.mount_proc '/' do |req, resp|
         headers = {}
@@ -186,19 +189,21 @@ module TokenVoting
     # Waits for expected number of notifications to occur before timeout.
     # Also checks if there were no superfluous notifications after completion.
     def assert_notifications(expected={})
-      @notifications.clear
+      assert @notifications.all? { |k,v| v == 0 }
+
       expected.each { |k,v| @notifications[k] = 0 }
       yield
 
       begin
         Timeout.timeout(5 + 10*expected['blocknotify']) do
-          sleep 0.5 until expected <= @notifications
+          sleep 0.1 until expected <= @notifications
         end
       rescue Timeout::Error
         # do nothing, final assert checks validity of result
       end
-
       assert_operator expected, :<=, @notifications
+
+      @notifications.clear
     end
 
     # Waits for tx to arrive into node's mempool before timeout.

@@ -311,6 +311,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     end
     assert txid
     inputs, outputs = @wallet.get_tx_addresses(txid)
+    Rails.logger.info "#{txid}" if inputs.length == 0
     assert_operator 0, :<, inputs.length
     assert_includes [1, 2], outputs.length
     assert_includes outputs, address
