@@ -7,9 +7,9 @@
 # - user can cancel withdrawal before it has been fulfilled (i.e. before status
 # changes to 'pending').
 # - plugin has to effectively batch withdrawals to incur minimal fees, including
-# merger of multiple withdrawals for the same user/token in one tx.
+# merger of multiple withdrawals for the same token (incl. different users) in one tx.
 # - loss of information regarding withdrawals (e.g. token_withdrawals table corruption or
-# deletion) may not incur double withdrawals.
+# deletion) must not incur double withdrawals.
 #
 # Withdrawal statuses:
 # - requested - requested by user, tx not prepared, user can still cancel.
@@ -28,7 +28,8 @@ class TokenWithdrawal < ActiveRecord::Base
   belongs_to :token_type
 
   validates :payee, :token_type, presence: true, associated: true
-  validates :amount, numericality: { grater_than: 0 }
+  validates :amount, numericality: { greater_than: 0 }
+  validates :amount, numericality: { less_than_or_equal_to: :total_withdrawable }
   validates :address, presence: true
 
   after_initialize :set_defaults
@@ -36,6 +37,9 @@ class TokenWithdrawal < ActiveRecord::Base
   scope :requested, -> { where(txid: nil) }
   scope :pending, -> { where.not(txid: nil).where(is_processed: false) }
   scope :processed, -> { where.not(txid: nil).where(is_processed: true) }
+
+  def total_withdrawable
+  end
 
   protected
 

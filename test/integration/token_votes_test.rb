@@ -336,7 +336,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     end
   end
 
-  def test_issue_edit_hook_should_create_token_payouts_with_per_user_share_amounts
+  def test_issue_edit_hook_computes_token_payouts_per_user_share
     log_user 'alice', 'foo'
     vote1 = create_token_vote
     fund_token_vote(vote1, 0.25, @min_conf)

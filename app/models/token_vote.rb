@@ -179,45 +179,37 @@ class TokenVote < ActiveRecord::Base
     return total_stats
   end
 
-  def self.process_tx(token_type_name, txid)
-    type = TokenType.find_by_name(token_type_name)
-    raise Error, "Invalid token type name: #{token_type_name}" unless type
-
-    rpc = RPC.get_rpc(type)
+  def self.process_tx(token_t, txid)
+    rpc = RPC.get_rpc(token_t)
     inputs, outputs = rpc.get_tx_addresses(txid)
-    TokenVote.where(address: inputs+outputs, token_type: type).each do |vote|
+    TokenVote.where(address: inputs+outputs, token_type: token_t).each do |vote|
       vote.update_amounts
       vote.save!
     end
   end
 
-  def self.process_block(token_type_name, blockhash)
-    type = TokenType.find_by_name(token_type_name)
-    raise Error, "Invalid token type name: #{token_type_name}" unless type
-
-    rpc = RPC.get_rpc(type)
+  def self.process_block(token_t, blockhash)
+    rpc = RPC.get_rpc(token_t)
 
     # Update amount_conf/_unconf for txs confirmed since last synced block.
     # - amount_conf/_unconf must be updated for all confirmed txs, as 
     # 'walletnotify' may miss txs and they won't show as unconfirmed.
     # (so it is not enough to update amounts only for amount_unconf > 0 votes here).
-    prev_blockhash = rpc.get_block_hash(type.prev_sync_height)
-    incoming_txs = rpc.list_since_block(prev_blockhash, type.min_conf, true)
+    prev_blockhash = rpc.get_block_hash(token_t.prev_sync_height)
+    incoming_txs = rpc.list_since_block(prev_blockhash, token_t.min_conf, true)
     next_block_height = rpc.get_block(incoming_txs['lastblock'])['height']
-    return if type.prev_sync_height >= next_block_height
-
-    #puts "GET processing from #{prev_blockhash}/#{type.prev_sync_height} to #{incoming_txs['lastblock']}/#{next_block_height}"
+    return if token_t.prev_sync_height >= next_block_height
 
     TokenVote.transaction do
       incoming_txs['transactions'].each do |tx|
         inputs, outputs = rpc.get_tx_addresses(tx['txid'])
-        TokenVote.where(address: inputs+outputs, token_type: type).each do |vote|
+        TokenVote.where(address: inputs+outputs, token_type: token_t).each do |vote|
           vote.update_amounts
           vote.save!
         end
       end
-      type.prev_sync_height = next_block_height
-      type.save!
+      token_t.prev_sync_height = next_block_height
+      token_t.save!
     end
   end
 
