@@ -83,16 +83,10 @@ def destroy_token_vote(vote)
   assert_response :ok
 end
 
-def fund_token_vote(vote, amount)
-  assert_notifications 'walletnotify' => 1, 'blocknotify' => 0 do
-    @network.send_to_address(vote.address, amount)
-  end
-  vote.reload
-end
-
-def generate_blocks(count)
-  assert_notifications 'blocknotify' => count do
-    @network.generate(count)
+def fund_token_vote(vote, amount=0.0, confs=0)
+  assert_notifications 'blocknotify' => confs do
+    @network.send_to_address(vote.address, amount) if amount > 0.0
+    @network.generate(confs) if confs > 0
   end
   TokenVote.all.reload
 end

@@ -126,8 +126,9 @@ class TokenVote < ActiveRecord::Base
       total_amount_per_token =
         issue.token_votes.completed.group(:token_type).sum(:amount_conf)
 
-      payouts.each do |user_id, share|
-        total_amount_per_token.each do |token_type, amount|
+      total_amount_per_token.each do |token_type, amount|
+        next unless amount > 0
+        payouts.each do |user_id, share|
           # FIXME: potential rounding errors - sum of amounts should equal sum of payouts
           tp = TokenPayout.new(issue: issue, payee: User.find(user_id),
                                token_type: token_type, amount: share*amount)

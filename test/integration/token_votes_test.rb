@@ -11,6 +11,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
 
     @issue1 = issues(:issue_01)
     @issue2 = issues(:issue_02)
+    @min_conf = token_types(:BTCREG).min_conf
 
     Rails.logger.info "TEST #{name}"
   end
@@ -298,8 +299,62 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     # TODO: get /my/token_votes page and check for valid content
   end
 
-  def test_issue_edit_hook_should_create_token_payouts_on_token_vote_completion
+  def test_issue_edit_hook_should_not_create_token_payouts_without_token_votes
     log_user 'alice', 'foo'
+
+    assert_difference 'TokenPayout.count', 0 do
+      update_issue_status(@issue1, issue_statuses(:closed))
+    end
+  end
+
+  def test_issue_edit_hook_should_not_create_token_payouts_for_not_funded_token_vote
+    log_user 'alice', 'foo'
+    vote1 = create_token_vote
+
+    assert_difference 'TokenPayout.count', 0 do
+      update_issue_status(@issue1, issue_statuses(:closed))
+    end
+  end
+
+  def test_issue_edit_hook_should_not_create_token_payouts_for_funded_unconfirmed_token_vote
+    log_user 'alice', 'foo'
+    vote1 = create_token_vote
+    fund_token_vote(vote1, 0.25, @min_conf-1)
+
+    assert_difference 'TokenPayout.count', 0 do
+      update_issue_status(@issue1, issue_statuses(:closed))
+    end
+  end
+
+  def test_issue_edit_hook_should_create_token_payouts_for_funded_confirmed_token_vote
+    log_user 'alice', 'foo'
+    vote1 = create_token_vote
+    fund_token_vote(vote1, 0.25, @min_conf)
+
+    assert_difference 'TokenPayout.count', 1 do
+      update_issue_status(@issue1, issue_statuses(:closed))
+    end
+  end
+
+  def test_issue_edit_hook_should_create_token_payouts_with_per_user_share_amounts
+    log_user 'alice', 'foo'
+    vote1 = create_token_vote
+    fund_token_vote(vote1, 0.25, @min_conf)
+    update_issue_status(@issue1, issue_statuses(:resolved))
+    logout_user
+
+    log_user 'bob', 'foo'
+    update_issue_status(@issue1, issue_statuses(:pulled))
+    logout_user
+
+    log_user 'charlie', 'foo'
+    assert_difference 'TokenPayout.count', 3 do
+      update_issue_status(@issue1, issue_statuses(:closed))
+    end
+
+    assert_equal 0.175, TokenPayout.find_by(payee: users(:alice)).amount
+    assert_equal 0.050, TokenPayout.find_by(payee: users(:bob)).amount
+    assert_equal 0.025, TokenPayout.find_by(payee: users(:charlie)).amount
   end
 
   def test_rpc_get_tx_addresses
