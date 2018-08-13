@@ -4,6 +4,8 @@ class TokenPayout < ActiveRecord::Base
   belongs_to :token_type
 
   validates :payee, :issue, :token_type, presence: true, associated: true
-  validates :amount, numericality: { grater_than_or_equal_to: 0 }
+  validates :amount, numericality: { grater_than: 0 }
+
+  scope :token, ->(token_t) { where(token_type: token_t) }
 end
 

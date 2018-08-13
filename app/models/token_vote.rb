@@ -43,6 +43,8 @@ class TokenVote < ActiveRecord::Base
   scope :completed, -> { where(is_completed: true) }
   scope :expired, -> { where(is_completed: false).where("expiration <= ?", Time.current) }
 
+  scope :token, ->(token_t) { where(token_type: token_t) }
+
   def duration=(value)
     super(value.to_i)
     self[:expiration] = Time.current + self[:duration]
