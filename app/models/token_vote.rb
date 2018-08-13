@@ -35,8 +35,7 @@ class TokenVote < ActiveRecord::Base
   validates :duration, inclusion: { in: DURATIONS.values }
   validates :expiration, :address, presence: true
   validates :address, presence: true, uniqueness: true
-  validates :amount_conf, :amount_unconf, :pending_withdrawals,
-    numericality: { grater_than_or_equal_to: 0 }
+  validates :amount_conf, :amount_unconf, numericality: { grater_than_or_equal_to: 0 }
 
   after_initialize :set_defaults
 
@@ -221,7 +220,6 @@ class TokenVote < ActiveRecord::Base
       self.token_type ||= TokenType.find_by_default(true) || TokenType.all.first
       self.amount_conf ||= 0
       self.amount_unconf ||= 0
-      self.pending_withdrawals ||= 0
       self.is_completed ||= false
     end
   end

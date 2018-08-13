@@ -15,38 +15,43 @@
 # - requested - requested by user, tx not prepared, user can still cancel.
 # Withdrawal contains only token_type, amount and destination address, without
 # specification of source TokenVotes. Requested withdrawal is not reflected in
-# TokenVotes#pending_withdrawals nor TokenPayouts.
+# TokenPendingOutflows nor TokenPayouts.
 # - pending - tx prepared and waiting to be sent or has already been sent, tx
 # has less than min_conf confirmations, user cannot cancel withdrawal.
-# Withdrawal is reflected in TokenVotes#pending_withdrawals and TokenPayouts.
+# Withdrawal is reflected in TokenTransactions, TokenPendingOutflows and TokenPayouts.
 # - processed - tx has been sent and has at least min_conf confirmations.
-# TokenVotes#pending_withdrawals for processed withdrawal is canceled as it is
+# TokenPendingOutflows for processed withdrawal is canceled as it is
 # already reflected in TokenVotes#amount_conf.
 
 class TokenWithdrawal < ActiveRecord::Base
   belongs_to :payee, class_name: 'User'
   belongs_to :token_type
+  belongs_to :token_transaction
 
   validates :payee, :token_type, presence: true, associated: true
+  validates :token_transaction, associated: true
   validates :amount, numericality: { greater_than: 0 }
   validates :amount, numericality: { less_than_or_equal_to: :total_withdrawable }
   validates :address, presence: true
 
-  after_initialize :set_defaults
+  #after_initialize :set_defaults
 
-  scope :requested, -> { where(txid: nil) }
-  scope :pending, -> { where.not(txid: nil).where(is_processed: false) }
-  scope :processed, -> { where.not(txid: nil).where(is_processed: true) }
+  scope :requested, -> { where(token_transaction: nil) }
+  scope :pending, -> { 
+    joins(:token_transaction).where(token_transaction: {is_processed: false})
+  }
+  scope :processed, -> {
+    joins(:token_transaction).where(token_transaction: {is_processed: true})
+  }
 
   def total_withdrawable
   end
 
   protected
 
-  def set_defaults
-    if new_record?
-      self.is_processed ||= false
-    end
-  end
+  #def set_defaults
+  #  if new_record?
+  #  end
+  #end
 end
 
