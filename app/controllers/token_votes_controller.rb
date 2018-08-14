@@ -1,6 +1,8 @@
 class TokenVotesController < ApplicationController
 
-  before_filter :find_issue_and_project, :authorize, only: [:create, :withdraw]
+  before_filter :find_issue, only: [:create]
+  before_filter :find_token_vote, only: [:destroy]
+  before_filter :authorize, only: [:create, :destroy]
   accept_api_auth :walletnotify, :blocknotify
 
   helper IssuesHelper
@@ -22,9 +24,6 @@ class TokenVotesController < ApplicationController
   end
 
   def destroy
-    @token_vote = TokenVote.find(params[:id])
-    @issue = @token_vote.issue
-
     raise Unauthorized unless @token_vote.deletable?
     @token_vote.destroy
 
@@ -33,8 +32,6 @@ class TokenVotesController < ApplicationController
         @token_votes = @issue.reload.token_votes.select {|tv| tv.visible?}
       }
     end
-  rescue ActiveRecord::RecordNotFound => e
-    render_404
   end
 
   def withdraw
@@ -89,9 +86,17 @@ class TokenVotesController < ApplicationController
     params.require(:token_withdrawal).permit(:token_type_id, :amount, :address)
   end
 
-  # @project must be known before :authorize before_filter is executed
-  def find_issue_and_project
+  # @project is required for :authorize to succeed
+  def find_issue
     @issue = Issue.find(params[:issue_id])
+    @project = @issue.project
+  rescue ActiveRecord::RecordNotFound
+    render_404
+  end
+
+  def find_token_vote
+    @token_vote = TokenVote.find(params[:id])
+    @issue = @token_vote.issue
     @project = @issue.project
   rescue ActiveRecord::RecordNotFound
     render_404

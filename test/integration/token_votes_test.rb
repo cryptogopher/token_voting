@@ -25,7 +25,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     logout_user
     assert_no_difference 'TokenVote.count' do
       post "#{issue_token_votes_path(@issue1)}.js", params: {
-        token_vote: { token: 'BTCREG', duration: 1.day }
+        token_vote: { token_type_id: token_types(:BTCREG).id, duration: 1.day }
       }
     end
     assert_response :unauthorized
@@ -38,7 +38,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     log_user 'alice', 'foo'
     assert_no_difference 'TokenVote.count' do
       post "#{issue_token_votes_path(@issue1)}.js", params: {
-        token_vote: { token: 'BTCREG', duration: 1.day }
+        token_vote: { token_type_id: token_types(:BTCREG).id, duration: 1.day }
       }
     end
     assert_response :forbidden

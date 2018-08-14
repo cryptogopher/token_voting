@@ -203,7 +203,7 @@ module TokenVoting
       yield
 
       begin
-        Timeout.timeout(5 + 10*expected['blocknotify']) do
+        Timeout.timeout(10 + 10*expected['blocknotify']) do
           sleep 0.1 until expected <= @notifications
         end
       rescue Timeout::Error
