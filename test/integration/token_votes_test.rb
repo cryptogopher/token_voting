@@ -275,7 +275,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
         if value.kind_of?(IssueStatus)
           update_issue_status(issue, value)
         else
-          votes << create_token_vote(issue, {duration: value})
+          votes << create_token_vote(issue, duration: value)
         end
       end
     end

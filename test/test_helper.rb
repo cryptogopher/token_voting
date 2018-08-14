@@ -62,7 +62,7 @@ def logout_user
   post signout_path
 end
 
-def create_token_vote(issue=issues(:issue_01), attributes={})
+def create_token_vote(issue=issues(:issue_01), **attributes)
   attributes[:token_type_id] ||= token_types(:BTCREG).id
   attributes[:duration] ||= 1.day
 

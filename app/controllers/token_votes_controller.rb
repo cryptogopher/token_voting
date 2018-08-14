@@ -1,13 +1,11 @@
 class TokenVotesController < ApplicationController
 
-  before_filter :authorize, only: [:create, :withdraw]
+  before_filter :find_issue_and_project, :authorize, only: [:create, :withdraw]
   accept_api_auth :walletnotify, :blocknotify
 
   helper IssuesHelper
 
   def create
-    @issue = Issue.find(params[:issue_id])
-
     @token_vote = TokenVote.new(token_votes_params)
     @token_vote.voter = User.current
     @token_vote.issue = @issue
@@ -89,6 +87,14 @@ class TokenVotesController < ApplicationController
 
   def token_withdrawal_params
     params.require(:token_withdrawal).permit(:token_type_id, :amount, :address)
+  end
+
+  # @project must be known before :authorize before_filter is executed
+  def find_issue_and_project
+    @issue = Issue.find(params[:issue_id])
+    @project = @issue.project
+  rescue ActiveRecord::RecordNotFound
+    render_404
   end
 end
 
