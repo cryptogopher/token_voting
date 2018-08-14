@@ -46,7 +46,7 @@ ensure
   User.current = saved_user
 end
 
-def TokenVote.generate!(attributes={})
+def TokenVote.generate!(**attributes)
   tv = TokenVote.new(attributes)
   tv.voter ||= User.take
   tv.issue ||= Issue.take

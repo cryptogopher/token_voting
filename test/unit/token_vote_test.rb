@@ -11,7 +11,7 @@ class TokenVoteTest < ActiveSupport::TestCase
 
   def test_forward_stepwise_processing_payouts
     issue = issues(:issue_01)
-    TokenVote.generate!( {issue: issue, amount_conf: 1.0} )
+    TokenVote.generate!(issue: issue, amount_conf: 1.0)
 
     assert_no_difference 'TokenPayout.count' do
       Issue.update_status!(issue, users(:alice), issue_statuses(:resolved))
@@ -30,7 +30,7 @@ class TokenVoteTest < ActiveSupport::TestCase
 
   def test_forward_stepwise_processing_with_repeating_checkpoint_payouts
     issue = issues(:issue_01)
-    TokenVote.generate!( {issue: issue, amount_conf: 1.0} )
+    TokenVote.generate!(issue: issue, amount_conf: 1.0)
 
     assert_no_difference 'TokenPayout.count' do
       Issue.update_status!(issue, users(:alice), issue_statuses(:resolved))
@@ -53,7 +53,7 @@ class TokenVoteTest < ActiveSupport::TestCase
 
   def test_forward_shortcut_processing_payouts
     issue = issues(:issue_01)
-    TokenVote.generate!( {issue: issue, amount_conf: 1.0} )
+    TokenVote.generate!(issue: issue, amount_conf: 1.0)
 
     assert_no_difference 'TokenPayout.count' do
       Issue.update_status!(issue, users(:alice), issue_statuses(:resolved))
@@ -68,7 +68,7 @@ class TokenVoteTest < ActiveSupport::TestCase
 
   def test_partial_backtrack_before_final_checkpoint_payouts
     issue = issues(:issue_01)
-    TokenVote.generate!( {issue: issue, amount_conf: 1.0} )
+    TokenVote.generate!(issue: issue, amount_conf: 1.0)
 
     assert_no_difference 'TokenPayout.count' do
       Issue.update_status!(issue, users(:alice), issue_statuses(:resolved))
@@ -95,7 +95,7 @@ class TokenVoteTest < ActiveSupport::TestCase
 
   def test_full_backtrack_before_final_checkpoint_payouts
     issue = issues(:issue_01)
-    TokenVote.generate!( {issue: issue, amount_conf: 1.0} )
+    TokenVote.generate!(issue: issue, amount_conf: 1.0)
 
     assert_no_difference 'TokenPayout.count' do
       Issue.update_status!(issue, users(:bob), issue_statuses(:pulled))
@@ -114,7 +114,7 @@ class TokenVoteTest < ActiveSupport::TestCase
 
   def test_partial_backtrack_after_final_checkpoint_payouts
     issue = issues(:issue_01)
-    TokenVote.generate!( {issue: issue, amount_conf: 1.0} )
+    TokenVote.generate!(issue: issue, amount_conf: 1.0)
 
     assert_no_difference 'TokenPayout.count' do
       Issue.update_status!(issue, users(:alice), issue_statuses(:pulled))
@@ -141,7 +141,7 @@ class TokenVoteTest < ActiveSupport::TestCase
 
   def test_forward_finalization_in_one_step_payouts
     issue = issues(:issue_01)
-    TokenVote.generate!( {issue: issue, amount_conf: 1.0} )
+    TokenVote.generate!(issue: issue, amount_conf: 1.0)
 
     assert_difference 'TokenPayout.count', 1 do
       Issue.update_status!(issue, users(:alice), issue_statuses(:closed))
@@ -154,7 +154,7 @@ class TokenVoteTest < ActiveSupport::TestCase
     Setting.plugin_token_voting['checkpoints']['shares'] = ['0.6', '0.0', '0.4']
 
     issue = issues(:issue_01)
-    TokenVote.generate!( {issue: issue, amount_conf: 1.0} )
+    TokenVote.generate!(issue: issue, amount_conf: 1.0)
 
     assert_no_difference 'TokenPayout.count' do
       Issue.update_status!(issue, users(:alice), issue_statuses(:resolved))
@@ -173,7 +173,7 @@ class TokenVoteTest < ActiveSupport::TestCase
 
   def test_multiple_checkpoints_by_single_user_payouts
     issue = issues(:issue_01)
-    TokenVote.generate!( {issue: issue, amount_conf: 1.0} )
+    TokenVote.generate!(issue: issue, amount_conf: 1.0)
 
     assert_no_difference 'TokenPayout.count' do
       Issue.update_status!(issue, users(:alice), issue_statuses(:resolved))
@@ -191,9 +191,9 @@ class TokenVoteTest < ActiveSupport::TestCase
 
   def test_multiple_votes_pauoyts
     issue = issues(:issue_01)
-    TokenVote.generate!( {issue: issue, amount_conf: 1.0} )
-    TokenVote.generate!( {issue: issue, amount_conf: 0.2} )
-    TokenVote.generate!( {issue: issue, amount_conf: 15.0} )
+    TokenVote.generate!(issue: issue, amount_conf: 1.0)
+    TokenVote.generate!(issue: issue, amount_conf: 0.2)
+    TokenVote.generate!(issue: issue, amount_conf: 15.0)
 
     assert_no_difference 'TokenPayout.count' do
       Issue.update_status!(issue, users(:alice), issue_statuses(:resolved))
@@ -215,10 +215,10 @@ class TokenVoteTest < ActiveSupport::TestCase
     btcreg = token_types(:BTCREG)
     btctest = token_types(:BTCTEST)
 
-    TokenVote.generate!( {issue: issue, amount_conf: 1.0, token_type: btcreg} )
-    TokenVote.generate!( {issue: issue, amount_conf: 6.0, token_type: btctest} )
-    TokenVote.generate!( {issue: issue, amount_conf: 0.1, token_type: btcreg} )
-    TokenVote.generate!( {issue: issue, amount_conf: 2.0, token_type: btctest} )
+    TokenVote.generate!(issue: issue, amount_conf: 1.0, token_type: btcreg)
+    TokenVote.generate!(issue: issue, amount_conf: 6.0, token_type: btctest)
+    TokenVote.generate!(issue: issue, amount_conf: 0.1, token_type: btcreg)
+    TokenVote.generate!(issue: issue, amount_conf: 2.0, token_type: btctest)
 
     assert_no_difference 'TokenPayout.count' do
       Issue.update_status!(issue, users(:alice), issue_statuses(:resolved))
@@ -242,9 +242,9 @@ class TokenVoteTest < ActiveSupport::TestCase
 
   def test_expired_vote_payouts
     issue = issues(:issue_01)
-    TokenVote.generate!( {issue: issue, amount_conf: 0.25} )
-    TokenVote.generate!( {issue: issue, amount_conf: 0.001} )
-    TokenVote.generate!( {issue: issue, amount_conf: 2.2} ) do |tv|
+    TokenVote.generate!(issue: issue, amount_conf: 0.25)
+    TokenVote.generate!(issue: issue, amount_conf: 0.001)
+    TokenVote.generate!(issue: issue, amount_conf: 2.2) do |tv|
       tv.expiration = 1.day.ago
     end
 
