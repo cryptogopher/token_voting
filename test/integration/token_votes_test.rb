@@ -21,7 +21,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     logout_user
   end
 
-  def test_create_token_vote_by_anonymous_should_fail
+  def test_create_vote_by_anonymous_should_fail
     logout_user
     assert_no_difference 'TokenVote.count' do
       post "#{issue_token_votes_path(@issue1)}.js", params: {
@@ -31,7 +31,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     assert_response :unauthorized
   end
 
-  def test_create_token_vote_without_permissions_should_fail
+  def test_create_vote_without_permissions_should_fail
     roles = users(:alice).members.find_by(project: @issue1.project_id).roles
     roles.each { |role| role.remove_permission! :manage_token_votes }
 
@@ -44,13 +44,13 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     assert_response :forbidden
   end
 
-  def test_create_token_vote
+  def test_create_vote
     log_user 'alice', 'foo'
     create_token_vote
     # TODO: get issue page and check for valid content
   end
 
-  def test_destroy_token_vote_by_anonymous_shoulf_fail
+  def test_destroy_vote_by_anonymous_shoulf_fail
     log_user 'alice', 'foo'
     vote1 = create_token_vote
     logout_user
@@ -61,7 +61,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     assert_response :unauthorized
   end
 
-  def test_destroy_token_vote_by_non_owner_should_fail
+  def test_destroy_vote_by_non_owner_should_fail
     log_user 'alice', 'foo'
     vote1 = create_token_vote
     logout_user
@@ -73,7 +73,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     assert_response :forbidden
   end
 
-  def test_destroy_token_vote_without_permissions_should_fail
+  def test_destroy_vote_without_permissions_should_fail
     log_user 'alice', 'foo'
     vote1 = create_token_vote
 
@@ -88,7 +88,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
 
   # TODO: test for destruction without issue visibility
 
-  def test_destroy_token_vote_funded_with_unconfirmed_tx_should_fail
+  def test_destroy_vote_funded_with_unconfirmed_tx_should_fail
     log_user 'alice', 'foo'
     vote1 = create_token_vote
 
@@ -107,7 +107,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     end
   end
 
-  def test_destroy_token_vote_funded_with_confirmed_tx_should_fail
+  def test_destroy_vote_funded_with_confirmed_tx_should_fail
     log_user 'alice', 'foo'
     vote1 = create_token_vote
 
@@ -124,7 +124,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     assert_response :forbidden
   end
 
-  def test_destroy_token_vote
+  def test_destroy_vote
     log_user 'alice', 'foo'
     vote1 = create_token_vote
     destroy_token_vote(vote1)
@@ -145,7 +145,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
   # with waiting for 'walletnotify'.
   # Testing notifications:
   #   tail -f ../../log/test.log | egrep "(GET|POST|TEST)"
-  def test_walletnotify_after_first_receiving_payment
+  def test_walletnotify_after_first_receiving_tx
     log_user 'alice', 'foo'
     vote1 = create_token_vote
 
@@ -161,7 +161,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     end
   end
 
-  def test_walletnotify_after_first_receiving_multiple_payments
+  def test_walletnotify_after_first_receiving_multiple_txs
     log_user 'alice', 'foo'
     vote1 = create_token_vote
     vote2 = create_token_vote
@@ -181,7 +181,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     end
   end
 
-  def test_walletnotify_and_blocknotify_after_first_confirmation_of_payment
+  def test_walletnotify_and_blocknotify_after_first_confirmation_of_tx
     log_user 'alice', 'foo'
     vote1 = create_token_vote
 
@@ -195,7 +195,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     assert_equal vote1.amount_conf, 0
   end
 
-  def test_blocknotify_after_min_conf_minus_1_confirmations_of_payment
+  def test_blocknotify_after_min_conf_minus_1_confirmations_of_tx
     log_user 'alice', 'foo'
     vote1 = create_token_vote
     min_conf = vote1.token_type.min_conf
@@ -210,7 +210,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     assert_equal vote1.amount_conf, 0
   end
 
-  def test_blocknotify_after_min_conf_confirmations_of_payment
+  def test_blocknotify_after_min_conf_confirmations_of_tx
     log_user 'alice', 'foo'
     vote1 = create_token_vote
     min_conf = vote1.token_type.min_conf
@@ -224,7 +224,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     assert_equal vote1.amount_conf, 1.2
   end
 
-  def test_blocknotify_after_confirmations_of_multiple_payments
+  def test_blocknotify_after_confirmations_of_multiple_txs
     log_user 'alice', 'foo'
     vote1 = create_token_vote
     vote2 = create_token_vote
@@ -248,7 +248,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     assert_equal vote2.amount_conf, 0.0
   end
 
-  def test_issue_edit_hook_and_expiration_should_update_token_vote_status_scope
+  def test_issue_edit_hook_and_expiration_should_update_vote_status_scope
     log_user 'alice', 'foo'
 
     # Resolve issue1 between 8.days and 8.days+1.minute
@@ -299,7 +299,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     # TODO: get /my/token_votes page and check for valid content
   end
 
-  def test_issue_edit_hook_should_not_create_token_payouts_without_token_votes
+  def test_issue_edit_hook_should_not_create_payouts_without_votes
     log_user 'alice', 'foo'
 
     assert_difference 'TokenPayout.count', 0 do
@@ -307,7 +307,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     end
   end
 
-  def test_issue_edit_hook_should_not_create_token_payouts_for_not_funded_token_vote
+  def test_issue_edit_hook_should_not_create_payouts_for_not_funded_vote
     log_user 'alice', 'foo'
     vote1 = create_token_vote
 
@@ -316,7 +316,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     end
   end
 
-  def test_issue_edit_hook_should_not_create_token_payouts_for_funded_unconfirmed_token_vote
+  def test_issue_edit_hook_should_not_create_payouts_for_funded_unconfirmed_vote
     log_user 'alice', 'foo'
     vote1 = create_token_vote
     fund_token_vote(vote1, 0.25, @min_conf-1)
@@ -326,7 +326,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     end
   end
 
-  def test_issue_edit_hook_should_create_token_payouts_for_funded_confirmed_token_vote
+  def test_issue_edit_hook_should_create_payouts_for_funded_confirmed_vote
     log_user 'alice', 'foo'
     vote1 = create_token_vote
     fund_token_vote(vote1, 0.25, @min_conf)
@@ -336,7 +336,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     end
   end
 
-  def test_issue_edit_hook_computes_token_payouts_per_user_share
+  def test_issue_edit_hook_computes_payouts_per_user_share
     log_user 'alice', 'foo'
     vote1 = create_token_vote
     fund_token_vote(vote1, 0.25, @min_conf)
