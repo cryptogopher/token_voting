@@ -11,8 +11,7 @@ class TokenVotesController < ApplicationController
     @token_vote.issue = @issue
     @token_vote.generate_address
     @token_vote.save!
-  rescue RPC::Error, TokenVote::Error, ActiveRecord::RecordNotFound,
-         ActiveRecord::RecordInvalid => e
+  rescue RPC::Error, TokenVote::Error, ActiveRecord::RecordInvalid => e
     flash[:error] = e.message
   ensure
     respond_to do |format|
@@ -24,18 +23,18 @@ class TokenVotesController < ApplicationController
 
   def destroy
     @token_vote = TokenVote.find(params[:id])
-    raise Unauthorized unless @token_vote.deletable?
-
     @issue = @token_vote.issue
+
+    raise Unauthorized unless @token_vote.deletable?
     @token_vote.destroy
-  rescue ActiveRecord::RecordNotFound
-    flash[:error] = e.message
-  ensure
+
     respond_to do |format|
       format.js {
         @token_votes = @issue.reload.token_votes.select {|tv| tv.visible?}
       }
     end
+  rescue ActiveRecord::RecordNotFound => e
+    render_404
   end
 
   def withdraw
@@ -50,6 +49,7 @@ class TokenVotesController < ApplicationController
   # (bitcoind --walletnotify cmdline option)
   def walletnotify
     service_api_request {
+      token_type = TokenType.find_by_name!(params[:token_type_name])
       TokenVote.process_tx(token_type, params[:txid])
     }
   end
@@ -58,6 +58,7 @@ class TokenVotesController < ApplicationController
   # (bitcoind --blocknotify cmdline option)
   def blocknotify
     service_api_request {
+      token_type = TokenType.find_by_name!(params[:token_type_name])
       TokenVote.process_block(token_type, params[:blockhash])
     }
   end
@@ -65,7 +66,6 @@ class TokenVotesController < ApplicationController
   private
 
   def service_api_request
-    token_type = TokenType.find_by_name!(params[:token_type_name])
     yield
   rescue RPC::Error => e
     api_message = e.message

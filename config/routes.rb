@@ -7,6 +7,7 @@ resources :issues do
       resources :token_votes, :controller => 'token_votes', :only => [:create, :destroy]
     end
 end
+get 'token_votes/withdraw', to: 'token_votes#withdraw', as: 'withdraw_token_vote'
 get 'token_votes/walletnotify/:token_type_name/:txid', to: 'token_votes#walletnotify',
   as: 'walletnotify_token_vote'
 get 'token_votes/blocknotify/:token_type_name/:blockhash', to: 'token_votes#blocknotify',
