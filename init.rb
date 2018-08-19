@@ -26,7 +26,8 @@ Redmine::Plugin.register :token_voting do
     caption: 'My token votes', first: true
 
   project_module :issue_tracking do
-    permission :manage_token_votes, {token_votes: [:create, :destroy, :withdraw]}
+    permission :add_token_votes, {token_votes: [:create, :destroy, :withdraw]}
+    permission :manage_token_votes, {token_votes: [:payout]}
   end
 
   settings default: {

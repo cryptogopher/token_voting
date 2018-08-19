@@ -3,7 +3,7 @@ class TokenVotesController < ApplicationController
   before_filter :find_issue, only: [:create]
   before_filter :find_token_vote, only: [:destroy]
   before_filter :authorize, only: [:create, :destroy]
-  before_filter :authorize_global, only: [:withdraw]
+  before_filter :authorize_global, only: [:withdraw, :payout]
   accept_api_auth :walletnotify, :blocknotify
 
   helper IssuesHelper
@@ -45,6 +45,16 @@ class TokenVotesController < ApplicationController
     respond_to do |format|
       format.js {
         @token_withdrawals = User.current.reload.token_withdrawals
+      }
+    end
+  end
+
+  def payout
+    TokenWithdrawal.process_requested
+
+    respond_to do |format|
+      format.js {
+        @token_withdrawals = TokenWithdrawal.all.reload.pending
       }
     end
   end

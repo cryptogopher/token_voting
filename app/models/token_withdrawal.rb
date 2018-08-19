@@ -57,6 +57,9 @@ class TokenWithdrawal < ActiveRecord::Base
     amount_payouts + amount_expired - amount_pending_expired - requested_withdrawals
   end
 
+  def self.process_requested
+  end
+
   protected
 
   #def set_defaults

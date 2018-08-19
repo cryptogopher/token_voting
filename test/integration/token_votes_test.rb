@@ -33,7 +33,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
 
   def test_create_vote_without_permissions_should_fail
     roles = users(:alice).members.find_by(project: @issue1.project_id).roles
-    roles.each { |role| role.remove_permission! :manage_token_votes }
+    roles.each { |role| role.remove_permission! :add_token_votes }
 
     log_user 'alice', 'foo'
     assert_no_difference 'TokenVote.count' do
@@ -78,7 +78,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     vote1 = create_token_vote
 
     roles = users(:alice).members.find_by(project: @issue1.project_id).roles
-    roles.each { |role| role.remove_permission! :manage_token_votes }
+    roles.each { |role| role.remove_permission! :add_token_votes }
 
     assert_no_difference 'TokenVote.count' do
       delete "#{token_vote_path(vote1)}.js"

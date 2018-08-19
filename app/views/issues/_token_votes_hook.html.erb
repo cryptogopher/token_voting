@@ -1,7 +1,7 @@
 <hr/>
 <div id="token_votes">
   <div class="contextual">
-    <% if User.current.allowed_to?(:manage_token_votes, @project) %>
+    <% if User.current.allowed_to?(:add_token_votes, @project) %>
       <%= toggle_link l(:button_add), 'new-token-vote-form', focus: 'token_vote_duration' %>
     <% end %>
   </div>
