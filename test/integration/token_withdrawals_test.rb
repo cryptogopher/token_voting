@@ -71,19 +71,7 @@ class TokenWithdrawalNotifyTest < TokenVoting::NotificationIntegrationTest
     withdraw_token_vote_should_fail(amount: 0.00000001)
   end
 
-  def test_withdraw_from_expired_funded_vote
-    log_user 'alice', 'foo'
-    vote1 = create_token_vote
-    fund_token_vote(vote1, 0.5, @min_conf)
-    travel(1.day+1.minute)
-
-    vote1.reload
-    assert vote1.expired?
-    assert vote1.funded?
-    withdraw_token_vote(amount: 0.5)
-  end
-
-  def test_withdraw_from_expired_funded_vote_of_excess_amount_should_fail
+  def test_withdraw_from_expired_funded_vote_only_up_to_amount
     log_user 'alice', 'foo'
     vote1 = create_token_vote
     fund_token_vote(vote1, 0.5, @min_conf)
@@ -93,6 +81,7 @@ class TokenWithdrawalNotifyTest < TokenVoting::NotificationIntegrationTest
     assert vote1.expired?
     assert vote1.funded?
     withdraw_token_vote_should_fail(amount: 0.50000001)
+    withdraw_token_vote(amount: 0.5)
   end
 
   def test_withdraw_from_completed_not_funded_vote_should_fail
@@ -106,28 +95,45 @@ class TokenWithdrawalNotifyTest < TokenVoting::NotificationIntegrationTest
     withdraw_token_vote_should_fail(amount: 0.00000001)
   end
 
-  def test_withdraw_from_completed_funded_vote
+  def test_withdraw_from_completed_funded_vote_only_up_to_share_amount
     log_user 'alice', 'foo'
     vote1 = create_token_vote
     fund_token_vote(vote1, 0.37, @min_conf)
+    update_issue_status(@issue1, issue_statuses(:resolved))
+    logout_user
+
+    log_user 'bob', 'foo'
     update_issue_status(@issue1, issue_statuses(:closed))
 
     vote1.reload
     assert vote1.completed?
     assert vote1.funded?
-    withdraw_token_vote(amount: 0.37)
+    withdraw_token_vote_should_fail(amount: 0.11100001)
+    withdraw_token_vote(amount: 0.111)
   end
 
-  def test_withdraw_from_completed_funded_vote_of_excess_amount_should_fail
+  def test_withdraw_multiple_withdrawals_from_mixed_votes_only_up_to_total_amount
     log_user 'alice', 'foo'
-    vote1 = create_token_vote
-    fund_token_vote(vote1, 0.37, @min_conf)
+    vote1 = create_token_vote(duration: 1.week)
+    fund_token_vote(vote1, 0.75, 1)
+    update_issue_status(@issue1, issue_statuses(:pulled))
+    logout_user
+
+    log_user 'bob', 'foo'
+    vote2 = create_token_vote
+    fund_token_vote(vote2, 1.2, @min_conf)
+    travel(2.days)
     update_issue_status(@issue1, issue_statuses(:closed))
 
     vote1.reload
+    vote2.reload
     assert vote1.completed?
     assert vote1.funded?
-    withdraw_token_vote_should_fail(amount: 0.37000001)
+    assert vote2.expired?
+    assert vote2.funded?
+    withdraw_token_vote(amount: 0.6)
+    withdraw_token_vote(amount: 0.675)
+    withdraw_token_vote_should_fail(amount: 0.00000001)
   end
 end
 
