@@ -23,7 +23,7 @@ class TokenWithdrawalNotifyTest < TokenVoting::NotificationIntegrationTest
 
   def test_withdraw_by_anonymous_should_fail
     assert_no_difference 'TokenWithdrawal.count' do
-      post "#{withdraw_token_vote_path}.js", params: {token_withdrawal: {
+      post "#{withdraw_token_votes_path}.js", params: {token_withdrawal: {
         token_type_id: token_types(:BTCREG),
         amount: 0.00000001,
         address: @network.get_new_address 

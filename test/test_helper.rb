@@ -81,7 +81,7 @@ def withdraw_token_vote(**attributes)
   attributes[:address] ||= @network.get_new_address
 
   assert_difference 'TokenWithdrawal.count', 1 do
-    post "#{withdraw_token_vote_path}.js", params: {token_withdrawal: attributes}
+    post "#{withdraw_token_votes_path}.js", params: {token_withdrawal: attributes}
     assert_nil flash[:error]
   end
   assert_response :ok
@@ -95,7 +95,7 @@ def withdraw_token_vote_should_fail(**attributes)
   attributes[:address] ||= @network.get_new_address
 
   assert_no_difference 'TokenWithdrawal.count' do
-    post "#{withdraw_token_vote_path}.js", params: {token_withdrawal: attributes}
+    post "#{withdraw_token_votes_path}.js", params: {token_withdrawal: attributes}
     refute_nil flash[:error]
   end
   assert_response :ok
