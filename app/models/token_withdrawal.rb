@@ -22,6 +22,8 @@
 # - processed - tx has been sent and has at least min_conf confirmations.
 # TokenPendingOutflows for processed withdrawal is canceled as it is
 # already reflected in TokenVotes#amount_conf.
+# - rejected - at the time of processing requested withdrawal, not ehough funds
+# are available (e.g. because completed issue has been reverted to uncompleted)
 
 class TokenWithdrawal < ActiveRecord::Base
   belongs_to :payee, class_name: 'User'
@@ -33,10 +35,12 @@ class TokenWithdrawal < ActiveRecord::Base
   validates :amount, numericality: { greater_than: 0 }
   validates :amount, numericality: { less_than_or_equal_to: :amount_withdrawable }
   validates :address, presence: true
+  validates :is_rejected, inclusion: [true, false]
 
-  #after_initialize :set_defaults
+  after_initialize :set_defaults
 
-  scope :requested, -> { where(token_transaction: nil) }
+  scope :requested, -> { where(token_transaction: nil, is_rejected: false) }
+  scope :rejected, -> { where(token_transaction: nil, is_rejected: true) }
   scope :pending, -> { 
     joins(:token_transaction).where(token_transaction: {is_processed: false})
   }
@@ -53,8 +57,8 @@ class TokenWithdrawal < ActiveRecord::Base
       total += self.payee.token_votes.token(self.token_type).expired.sum(:amount_conf)
       total -= self.payee.token_votes.token(self.token_type).expired
         .joins(:token_pending_outflows).sum(:amount)
-      total -= self.payee.token_withdrawals.token(self.token_type).where.not(id: self.id)
-        .sum(:amount)
+      total -= self.payee.token_withdrawals.token(self.token_type).requested
+        .where.not(id: self.id).sum(:amount)
     end
     total
   end
@@ -64,9 +68,10 @@ class TokenWithdrawal < ActiveRecord::Base
 
   protected
 
-  #def set_defaults
-  #  if new_record?
-  #  end
-  #end
+  def set_defaults
+    if new_record?
+      self.is_rejected ||= false
+    end
+  end
 end
 
