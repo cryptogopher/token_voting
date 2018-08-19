@@ -81,12 +81,24 @@ def withdraw_token_vote(**attributes)
   attributes[:address] ||= @network.get_new_address
 
   assert_difference 'TokenWithdrawal.count', 1 do
-    post "#{withdraw_token_vote_path}.js", params: attributes
+    post "#{withdraw_token_vote_path}.js", params: {token_withdrawal: attributes}
     assert_nil flash[:error]
   end
   assert_response :ok
 
   TokenWithdrawal.last
+end
+
+def withdraw_token_vote_should_fail(**attributes)
+  attributes[:token_type_id] ||= token_types(:BTCREG).id
+  attributes[:amount] ||= 1.0
+  attributes[:address] ||= @network.get_new_address
+
+  assert_no_difference 'TokenWithdrawal.count' do
+    post "#{withdraw_token_vote_path}.js", params: {token_withdrawal: attributes}
+    refute_nil flash[:error]
+  end
+  assert_response :ok
 end
 
 def destroy_token_vote(vote)
