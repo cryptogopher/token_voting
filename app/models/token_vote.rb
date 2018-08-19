@@ -9,6 +9,7 @@ class TokenVote < ActiveRecord::Base
   belongs_to :issue
   belongs_to :voter, class_name: 'User'
   belongs_to :token_type
+  has_many :token_pending_outflows
 
   DURATIONS = {
     "1 day" => 1.day,

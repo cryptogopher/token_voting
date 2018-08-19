@@ -23,23 +23,27 @@ class TokenWithdrawalNotifyTest < TokenVoting::NotificationIntegrationTest
 
   def test_withdraw_by_anonymous_should_fail
     assert_no_difference 'TokenWithdrawal.count' do
-      post "#{withdraw_token_vote_path}.js", params: {
-        token: 'BTCREG', amount: 0.00000001, address: @network.get_new_address 
-      }
+      post "#{withdraw_token_vote_path}.js", params: {token_withdrawal: {
+        token_type_id: token_types(:BTCREG),
+        amount: 0.00000001,
+        address: @network.get_new_address 
+      }}
     end
     assert_response :unauthorized
   end
 
   def test_withdraw_without_votes_should_fail
-    log 'alice', 'foo'
+    log_user 'alice', 'foo'
 
     assert_no_difference 'TokenWithdrawal.count' do
-      post "#{withdraw_token_vote_path}.js", params: {
-        token: 'BTCREG', amount: 0.00000001, address: @network.get_new_address 
-      }
+      post "#{withdraw_token_vote_path}.js", params: {token_withdrawal: {
+        token_type_id: token_types(:BTCREG).id,
+        amount: 0.00000001,
+        address: @network.get_new_address 
+      }}
       refute_nil flash[:error]
     end
-    assert_response :forbidden
+    assert_response :ok
   end
 end
 

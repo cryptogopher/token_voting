@@ -10,6 +10,8 @@ ActionDispatch::Reloader.to_prepare do
 
   SettingsController.include TokenVoting::SettingsControllerPatch
   SettingsHelper.include TokenVoting::SettingsHelperPatch
+
+  User.include TokenVoting::UserPatch
 end
 
 Redmine::Plugin.register :token_voting do

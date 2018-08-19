@@ -3,6 +3,7 @@ class TokenVotesController < ApplicationController
   before_filter :find_issue, only: [:create]
   before_filter :find_token_vote, only: [:destroy]
   before_filter :authorize, only: [:create, :destroy]
+  before_filter :authorize_global, only: [:withdraw]
   accept_api_auth :walletnotify, :blocknotify
 
   helper IssuesHelper
@@ -13,7 +14,8 @@ class TokenVotesController < ApplicationController
     @token_vote.issue = @issue
     @token_vote.generate_address
     @token_vote.save!
-  rescue RPC::Error, TokenVote::Error, ActiveRecord::RecordInvalid => e
+  rescue ActiveRecord::RecordNotFound, ActiveRecord::RecordInvalid,
+         RPC::Error, TokenVote::Error => e
     flash[:error] = e.message
   ensure
     respond_to do |format|
@@ -24,7 +26,6 @@ class TokenVotesController < ApplicationController
   end
 
   def destroy
-    raise Unauthorized unless @token_vote.deletable?
     @token_vote.destroy
 
     respond_to do |format|
@@ -35,11 +36,17 @@ class TokenVotesController < ApplicationController
   end
 
   def withdraw
-    @withdrawal = TokenWithdrawal.new(token_withdrawal_params)
-    @withdrawal.payee = User.current
-    @withdrawal.save!
+    @token_withdrawal = TokenWithdrawal.new(token_withdrawal_params)
+    @token_withdrawal.payee = User.current
+    @token_withdrawal.save!
   rescue ActiveRecord::RecordNotFound, ActiveRecord::RecordInvalid => e
     flash[:error] = e.message
+  ensure
+    respond_to do |format|
+      format.js {
+        @token_withdrawals = User.current.reload.token_withdrawals
+      }
+    end
   end
 
   # Callback for tx notification, details in token_votes_test.rb
@@ -86,9 +93,11 @@ class TokenVotesController < ApplicationController
     params.require(:token_withdrawal).permit(:token_type_id, :amount, :address)
   end
 
+  # :find_* methods are called before :authorize,
   # @project is required for :authorize to succeed
   def find_issue
     @issue = Issue.find(params[:issue_id])
+    raise Unauthorized unless @issue.visible?
     @project = @issue.project
   rescue ActiveRecord::RecordNotFound
     render_404
@@ -96,6 +105,7 @@ class TokenVotesController < ApplicationController
 
   def find_token_vote
     @token_vote = TokenVote.find(params[:id])
+    raise Unauthorized unless @token_vote.deletable?
     @issue = @token_vote.issue
     @project = @issue.project
   rescue ActiveRecord::RecordNotFound

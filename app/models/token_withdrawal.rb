@@ -47,14 +47,12 @@ class TokenWithdrawal < ActiveRecord::Base
   scope :token, ->(token_t) { where(token_type: token_t) }
 
   def amount_withdrawable
-    amount_payouts = self.payee
-      .token_payouts.token(self.token_type).sum(:amount)
-    amount_expired = self.payee
-      .token_votes.expired.token(self.token_type).sum(:amount_conf)
-    amount_pending_expired = self.payee
-      .token_votes.expired.token_pending_outflows.sum(:amount)
-    requested_withdrawals = self.payee
-      .token_withdrawals.token(self.token_type).where.not(id: self).sum(:amount)
+    amount_payouts = self.payee.token_payouts.token(self.token_type).sum(:amount)
+    amount_expired = self.payee.token_votes.token(self.token_type).expired.sum(:amount_conf)
+    amount_pending_expired = self.payee.token_votes.token(self.token_type).expired
+      .joins(:token_pending_outflows).sum(:amount)
+    requested_withdrawals = self.payee.token_withdrawals.token(self.token_type)
+      .where.not(id: self.id).sum(:amount)
 
     amount_payouts + amount_expired - amount_pending_expired - requested_withdrawals
   end

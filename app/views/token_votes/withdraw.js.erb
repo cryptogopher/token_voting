@@ -1,0 +1,6 @@
+$('#token_withdrawals-flash').html('<%= j(render_flash_messages) %>');
+<% flash.discard %>
+$('#token_withdrawals-table').html('<%# j(render :partial => 'token_votes/withdrawals') %>');
+<% if @token_withdrawal.errors.empty? %>
+  $('#token_withdrawal_amount').focus();
+<% end %>
