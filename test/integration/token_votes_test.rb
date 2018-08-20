@@ -22,7 +22,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
   end
 
   def test_create_vote_by_anonymous_should_fail
-    logout_user
+    assert User.current.instance_of? AnonymousUser
     assert_no_difference 'TokenVote.count' do
       post "#{issue_token_votes_path(@issue1)}.js", params: {
         token_vote: { token_type_id: token_types(:BTCREG).id, duration: 1.day }
@@ -34,6 +34,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
   def test_create_vote_without_permissions_should_fail
     roles = users(:alice).members.find_by(project: @issue1.project_id).roles
     roles.each { |role| role.remove_permission! :add_token_votes }
+    refute roles.any? { |role| role.has_permission? :add_token_votes }
 
     log_user 'alice', 'foo'
     assert_no_difference 'TokenVote.count' do
@@ -55,6 +56,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     vote1 = create_token_vote
     logout_user
 
+    assert User.current.instance_of? AnonymousUser
     assert_no_difference 'TokenVote.count' do
       delete "#{token_vote_path(vote1)}.js"
     end
@@ -79,6 +81,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
 
     roles = users(:alice).members.find_by(project: @issue1.project_id).roles
     roles.each { |role| role.remove_permission! :add_token_votes }
+    refute roles.any? { |role| role.has_permission? :add_token_votes }
 
     assert_no_difference 'TokenVote.count' do
       delete "#{token_vote_path(vote1)}.js"

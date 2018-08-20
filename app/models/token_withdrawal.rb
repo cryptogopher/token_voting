@@ -42,16 +42,16 @@ class TokenWithdrawal < ActiveRecord::Base
   scope :requested, -> { where(token_transaction: nil, is_rejected: false) }
   scope :rejected, -> { where(token_transaction: nil, is_rejected: true) }
   scope :pending, -> { 
-    joins(:token_transaction).where(token_transaction: {is_processed: false})
+    joins(:token_transaction).where(token_transactions: {is_processed: false})
   }
   scope :processed, -> {
-    joins(:token_transaction).where(token_transaction: {is_processed: true})
+    joins(:token_transaction).where(token_transactions: {is_processed: true})
   }
 
   scope :token, ->(token_t) { where(token_type: token_t) }
 
   def amount_withdrawable
-    total = 0
+    total = BigDecimal(0)
     TokenWithdrawal.transaction do
       total += self.payee.token_payouts.token(self.token_type).sum(:amount)
       total += self.payee.token_votes.token(self.token_type).expired.sum(:amount_conf)
@@ -64,6 +64,7 @@ class TokenWithdrawal < ActiveRecord::Base
   end
 
   def self.process_requested
+    puts TokenWithdrawal.requested.group_by { |tw| [tw.payee, tw.token_type] }.inspect
   end
 
   protected

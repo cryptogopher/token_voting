@@ -1,7 +1,7 @@
 manager:
   name: Manager
   builtin: 0
-  issues_visibility: all
+  issues_visibility: default
   users_visibility: all
   permissions: |
     - :add_project
@@ -62,6 +62,7 @@ manager:
     - :manage_project_activities
     - :import_issues
     - :add_token_votes
+    - :manage_token_votes
   position: 1
 
 developer:
@@ -111,6 +112,7 @@ developer:
     - :browse_repository
     - :view_changesets
     - :add_token_votes
+    - :manage_token_votes
   position: 2
 
 reporter:

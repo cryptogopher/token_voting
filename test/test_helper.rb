@@ -75,7 +75,7 @@ def create_token_vote(issue=issues(:issue_01), **attributes)
   TokenVote.last
 end
 
-def withdraw_token_vote(**attributes)
+def withdraw_token_votes(**attributes)
   attributes[:token_type_id] ||= token_types(:BTCREG).id
   attributes[:amount] ||= 1.0
   attributes[:address] ||= @network.get_new_address
@@ -89,7 +89,7 @@ def withdraw_token_vote(**attributes)
   TokenWithdrawal.last
 end
 
-def withdraw_token_vote_should_fail(**attributes)
+def withdraw_token_votes_should_fail(**attributes)
   attributes[:token_type_id] ||= token_types(:BTCREG).id
   attributes[:amount] ||= 1.0
   attributes[:address] ||= @network.get_new_address
