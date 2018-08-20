@@ -33,14 +33,15 @@ class TokenWithdrawal < ActiveRecord::Base
   validates :payee, :token_type, presence: true, associated: true
   validates :token_transaction, associated: true
   validates :amount, numericality: { greater_than: 0 }
-  validates :amount, numericality: { less_than_or_equal_to: :amount_withdrawable }
+  validates :amount, numericality:
+    { less_than_or_equal_to: :amount_withdrawable, if: :requested? }
   validates :address, presence: true
   validates :is_rejected, inclusion: [true, false]
 
   after_initialize :set_defaults
 
-  scope :requested, -> { where(token_transaction: nil, is_rejected: false) }
-  scope :rejected, -> { where(token_transaction: nil, is_rejected: true) }
+  scope :requested, -> { where(is_rejected: false, token_transaction: nil) }
+  scope :rejected, -> { where(is_rejected: true) }
   scope :pending, -> { 
     joins(:token_transaction).where(token_transactions: {is_processed: false})
   }
@@ -49,6 +50,19 @@ class TokenWithdrawal < ActiveRecord::Base
   }
 
   scope :token, ->(token_t) { where(token_type: token_t) }
+
+  def reject!
+    self.is_rejected = true
+    self.save!
+  end
+
+  def requested?
+    not self.is_rejected && self.token_transaction.nil?
+  end
+
+  def rejected?
+    self.is_rejected
+  end
 
   def amount_withdrawable
     total = BigDecimal(0)
@@ -64,7 +78,44 @@ class TokenWithdrawal < ActiveRecord::Base
   end
 
   def self.process_requested
-    puts TokenWithdrawal.requested.group_by { |tw| [tw.payee, tw.token_type] }.inspect
+    TokenWithdrawal.transaction do
+      requests_by_token = Hash.new { |hash, key| hash[key] = Hash.new }
+      all_requests = TokenWithdrawal.requested.order(id: :desc)
+        .group_by { |withdrawal| [withdrawal.payee, withdrawal.token_type] }
+      all_requests.each do |(payee, token_t), requests|
+        requests.each do |withdrawal|
+          break if withdrawal.valid?
+          withdrawal.reject!
+        end
+        requests.delete_if { |withdrawal| withdrawal.rejected? }
+        requests_by_token[token_t][payee] = requests
+      end
+
+      requests_by_token.each do |token_t, requests_by_payee|
+        input_addresses = Hash.new
+        requests_by_payee do |payee, requests|
+          required_amount = requests.sum(&:amount)
+          expired_votes = payee.token_votes.token(token_t).expired.group(:id)
+            .joins('LEFT OUTER JOIN token_pending_outflows ON 
+                    token_votes.id = token_pending_outflows.token_vote_id')
+            .select('token_votes.amount_conf as amount',
+                    'SUM(token_pending_outflows.amount) as amount_pending',
+                    'token_votes.address as address')
+          expired_votes.each do |amount, amount_pending, address|
+            break if required_amount == 0
+            input_amount = min([required_amount, amount-amount_pending])
+            input_addresses[address] = input_amount
+            required_amount -= input_amount
+          end
+
+          break if required_amount == 0
+
+          completed_votes = payee.token_payouts.token(token_t)
+            .joins(:token_vote).completed
+        end
+      end
+
+    end
   end
 
   protected
