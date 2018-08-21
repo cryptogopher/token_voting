@@ -124,15 +124,39 @@ class TokenWithdrawal < ActiveRecord::Base
             votes.each do |(*, vote_amount, vote_address)|
               break if required_amount == 0 || payout_amount == 0
               input_amount = min([payout_amount, vote_amount, required_amount])
-              completed_inputs[payout_id] = [vote_address, input_amount, vote_amount]
+              completed_inputs[payout_id] = [vote_address, input_amount,
+                                             vote_amount, payout_amount]
               payout_amount -= input_amount
               required_amount -= input_amount
             end
           end
         end
 
+        inputs = expired_inputs.values + completed_inputs.values
+        inputs.map! { |(address, amount, *)| [address, amount] }
+        requests_outputs = Hash.new(BigDecimal(0))
+        outputs = requests.map { |tw| requests_outputs[tw.address] += tw.amount }.to_a
 
+        rpc = RPC.get_rpc(token_t)
+        txid, tx = rpc.create_raw_tx(inputs, outputs)
+        tt = TokenTransaction.new(txid: txid, tx: tx)
+        tt.save!
 
+        tp_up, tp_del = completed_inputs.parition do |k, (*, input_amount, *, payout_amount)|
+          payout_amount-input_amount > 0
+        end
+        payout_updates = tp_up.map do |id, (*, input_amount, *, payout_amount)|
+          [id, {amount: payout_amount-input_amount}]
+        end
+        payout_updates.transpose
+        TokenPayout.update(payout_updates[0], payout_updates[1])
+        payout_deletions = tp_del.map { |id, *| id }
+        TokenPayout.destroy(payout_deletions)
+
+        pending_outflows = expired_inputs.map do |id, (*, pending_amount, *)|
+          {token_vote_id: id, token_transaction: tt, amount: pending_amount}
+        end
+        TokenPendingOutflows.create(pending_outflows)
       end
 
     end

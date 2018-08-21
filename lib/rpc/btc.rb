@@ -41,6 +41,11 @@ module RPC
       {}
     end
 
+    # Creates rawtransaction. Parameters are arrays containing:
+    # [[address1, amount1], [address2, amount2], ...]
+    def create_raw_tx(inputs, outputs)
+    end
+
     protected
 
     # https://bitcoin.org/en/developer-reference#rpc-quick-reference
