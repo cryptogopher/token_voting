@@ -95,23 +95,40 @@ class TokenWithdrawal < ActiveRecord::Base
         input_addresses = Hash.new
         requests_by_payee do |payee, requests|
           required_amount = requests.sum(&:amount)
+
+          expired_inputs = Hash.new
           expired_votes = payee.token_votes.token(token_t).expired.group(:id)
             .joins('LEFT OUTER JOIN token_pending_outflows ON 
                     token_votes.id = token_pending_outflows.token_vote_id')
-            .select('token_votes.amount_conf as amount',
+            .select('token_votes.id as id',
+                    'token_votes.amount_conf as amount',
                     'SUM(token_pending_outflows.amount) as amount_pending',
                     'token_votes.address as address')
-          expired_votes.each do |amount, amount_pending, address|
+          expired_votes.each do |id, amount, amount_pending, address|
             break if required_amount == 0
             input_amount = min([required_amount, amount-amount_pending])
-            input_addresses[address] = input_amount
+            expired_inputs[id] = [address, input_amount, amount-amount_pending]
             required_amount -= input_amount
           end
 
           break if required_amount == 0
 
-          completed_votes = payee.token_payouts.token(token_t)
-            .joins(:token_vote).completed
+          completed_votes = payee.token_payouts.token(token_t).joins(:token_vote).completed
+            .select('token_payouts.id as payout_id',
+                    'token_payouts.amount as payout_amount',
+                    'token_votes.amount_conf as vote_amount',
+                    'token_votes.address as vote_address')
+            .group_by { |vote| [payout_id, payout_amount] }
+          completed_votes.each do |(payout_id, payout_amount), votes|
+            break if required_amount == 0
+            votes.each do |(*, vote_amount, vote_address)|
+              break if required_amount == 0 || payout_amount == 0
+              input_amount = min([payout_amount, vote_amount, required_amount])
+              completed_inputs[payout_id] = [vote_address, input_amount, vote_amount]
+              payout_amount -= input_amount
+              required_amount -= input_amount
+            end
+          end
         end
       end
 
