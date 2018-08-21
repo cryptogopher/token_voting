@@ -139,8 +139,7 @@ class TokenWithdrawal < ActiveRecord::Base
 
         rpc = RPC.get_rpc(token_t)
         txid, tx = rpc.create_raw_tx(inputs, outputs)
-        tt = TokenTransaction.new(txid: txid, tx: tx)
-        tt.save!
+        tt = TokenTransaction.create(txid: txid, tx: tx)
 
         tp_up, tp_del = completed_inputs.parition do |k, (*, input_amount, *, payout_amount)|
           payout_amount-input_amount > 0
@@ -158,7 +157,6 @@ class TokenWithdrawal < ActiveRecord::Base
         end
         TokenPendingOutflows.create(pending_outflows)
       end
-
     end
   end
 
