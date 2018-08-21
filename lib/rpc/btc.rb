@@ -44,6 +44,7 @@ module RPC
     # Creates rawtransaction. Parameters are arrays containing:
     # [[address1, amount1], [address2, amount2], ...]
     def create_raw_tx(inputs, outputs)
+      ["txid", "tx"]
     end
 
     protected
