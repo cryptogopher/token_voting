@@ -92,7 +92,6 @@ class TokenWithdrawal < ActiveRecord::Base
       end
 
       requests_by_token.each do |token_t, requests_by_payee|
-        input_addresses = Hash.new
         requests_by_payee do |payee, requests|
           required_amount = requests.sum(&:amount)
 
@@ -113,6 +112,7 @@ class TokenWithdrawal < ActiveRecord::Base
 
           break if required_amount == 0
 
+          completed_inputs = Hash.new
           completed_votes = payee.token_payouts.token(token_t).joins(:token_vote).completed
             .select('token_payouts.id as payout_id',
                     'token_payouts.amount as payout_amount',
@@ -130,6 +130,9 @@ class TokenWithdrawal < ActiveRecord::Base
             end
           end
         end
+
+
+
       end
 
     end
