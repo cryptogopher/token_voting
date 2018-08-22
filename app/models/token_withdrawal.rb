@@ -78,89 +78,98 @@ class TokenWithdrawal < ActiveRecord::Base
   end
 
   def self.process_requested
-    # TODO musza byc per token
-    inputs = Hash.new(BigDecimal(0))
-    outputs = Hash.new(BigDecimal(0))
+    inputs = Hash.new { |h, k| h[k] = Hash.new(BigDecimal(0)) }
+    outputs = Hash.new { |h, k| h[k] = Hash.new(BigDecimal(0)) }
     pending_amounts = Hash.new(BigDecimal(0))
     pending_payouts = Hash.new(BigDecimal(0))
+    payouts = Hash.new
 
-    all_requests = TokenWithdrawal.requested.order(id: :asc)
-    all_requests.each do |withdrawal|
-      required_amount = withdrawal.amount
-
-      inputs_diff = Hash.new(BigDecimal(0))
-      pending_amounts_diff = Hash.new(BigDecimal(0))
-      pending_payouts_diff = Hash.new(BigDecimal(0))
-      votes_diff = []
-
-      votes[[withdrawal.payee_id, withdrawal.token_type_id]].each do |vote|
-        available_amount = lambda do
-          vote.amount - pending_amounts[vote.id] - pending_amounts_diff[vote.id]
-        end
-        available_payout = lambda do
-          vote.payout - pending_payouts[vote.payout_id] - pending_payouts_diff[vote.payout_id]
-        end
-
-        bounds = [required_amount, available_amount.call]
-        bounds << available_payout.call if vote.is_completed
-        input_amount = bounds.min
-
-        inputs_diff[vote.address] += input_amount
-        pending_amounts_diff[vote.id] += input_amount
-        pending_payouts_diff[vote.payout_id] += input_amount if vote.is_completed
-        required_amount -= input_amount
-
-        if available_amount.call == 0 || (available_payout.call == 0 && vote.is_completed)
-          votes_diff << vote
-        end
-        break if required_amount == 0
-      end
-
-      if required_amount > 0
-        withdrawal.reject!
-        next
-      end
-      inputs.merge!(inputs_diff) { |k, v1, v2| v1+v2 }
-      pending_amounts.merge!(pending_amounts_diff) { |k, v1, v2| v1+v2 }
-      pending_payouts.merge!(pending_payoutss_diff) { |k, v1, v2| v1+v2 }
-      votes -= votes_diff
-      outputs[withdrawal.address] += withdrawal.amount
-    end
-
-    common_addr = inputs.keys.to_set & outputs.keys.to_set
-    common_addr.each do |address|
-      min_amount = min([inputs[address], outputs[address]])
-      inputs[address] -= min_amount
-      inputs.delete(address) if inputs[address] == 0
-      outputs[address] -= min_amount
-      outputs.delete(address) if outputs[address] == 0
-    end
-
-    rpc = RPC.get_rpc(token_t)
-    txid, tx = rpc.create_raw_tx(inputs, outputs)
-    tt = TokenTransaction.create(txid: txid, tx: tx)
-    
     TokenWithdrawal.transaction do
-      requests_by_token.each do |token_t, requests_by_payee|
+      TokenWithdrawal.requested.order(id: :asc).each do |withdrawal|
+        required_amount = withdrawal.amount
 
-        tp_updates, tp_deletions =
-          completed_inputs.parition do |k, (*, input_amount, *, payout_amount)|
-            payout_amount-input_amount > 0
+        inputs_diff = Hash.new(BigDecimal(0))
+        pending_amounts_diff = Hash.new(BigDecimal(0))
+        pending_payouts_diff = Hash.new(BigDecimal(0))
+        votes_diff = []
+
+        votes[[withdrawal.payee_id, withdrawal.token_type_id]].each do |vote|
+          available_amount = lambda do
+            vote.amount - pending_amounts[vote.id] - pending_amounts_diff[vote.id]
           end
-        payout_updates += tp_updates.map do |id, (*, input_amount, *, payout_amount)|
-          [id, {amount: payout_amount-input_amount}]
-        end
-        payout_deletions += tp_deletions.map { |id, *| id }
+          available_payout = lambda do
+            vote.payout - pending_payouts[vote.payout_id] - pending_payouts_diff[vote.payout_id]
+          end
 
-        pending_outflows += expired_inputs.map do |id, (*, pending_amount, *)|
-          {token_vote_id: id, token_transaction: tt, amount: pending_amount}
+          bounds = [required_amount, available_amount.call]
+          bounds << available_payout.call if vote.is_completed
+          input_amount = bounds.min
+
+          inputs_diff[vote.address] += input_amount
+          pending_amounts_diff[vote.id] += input_amount
+          if vote.is_completed
+            pending_payouts_diff[vote.payout_id] += input_amount 
+            payouts[vote.payout_id] ||= vote.payout
+          end
+          required_amount -= input_amount
+
+          if available_amount.call == 0 || (available_payout.call == 0 && vote.is_completed)
+            votes_diff << vote
+          end
+          break if required_amount == 0
         end
+
+        if required_amount > 0
+          withdrawal.reject!
+          next
+        end
+        inputs[withdrawal.token_type].merge!(inputs_diff) { |k, v1, v2| v1+v2 }
+        pending_amounts.merge!(pending_amounts_diff) { |k, v1, v2| v1+v2 }
+        pending_payouts.merge!(pending_payoutss_diff) { |k, v1, v2| v1+v2 }
+        votes[[withdrawal.payee_id, withdrawal.token_type_id]] -= votes_diff
+        outputs[withdrawal.token_type][withdrawal.address] += withdrawal.amount
       end
 
+      transactions = Hash.new
+      outputs.keys.each do |token_t|
+        common_addresses = inputs[token_t].keys.to_set & outputs[token_t].keys.to_set
+        common_addresses.each do |address|
+          min_amount = min([inputs[token_t][address], outputs[token_t][address]])
+          inputs[token_t][address] -= min_amount
+          inputs[token_t].delete(address) if inputs[token_t][address] == 0
+          outputs[token_t][address] -= min_amount
+          outputs[token_t].delete(address) if outputs[token_t][address] == 0
+        end
+
+        # TODO: obsluga bledow RPC
+        rpc = RPC.get_rpc(token_t)
+        txid, tx = rpc.create_raw_tx(inputs[token_t], outputs[token_t])
+        transactions[token_t] = {txid: txid, tx: tx}
+      end
+      TokenTransaction.create(transactions.values)
+      
+      pp_updates, pp_deletions = pending_payouts.parition do |payout_id, pending_amount|
+        payouts[payout_id] > pending_amount
+      end
+      payout_updates += pp_updates.map do |payout_id, pending_amount|
+        [payout_id, {amount: payouts[payout_id]-pending_amount}]
+      end
       payout_updates.transpose
       TokenPayout.update(payout_updates[0], payout_updates[1])
+      payout_deletions += pp_deletions.map { |payout_id, *| payout_id }
       TokenPayout.destroy(payout_deletions)
+
+      pending_outflows = pending_amounts.map do |vote_id, pending_amount|
+        {
+          token_vote_id: vote_id,
+          # FIXME
+          token_transaction: transactions[],
+          amount: pending_amount
+        }
+      end
       TokenPendingOutflows.create(pending_outflows)
+
+      # TODO: update TokenWithdrawal o tokentransaction
     end
   end
 
