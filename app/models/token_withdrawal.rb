@@ -121,9 +121,9 @@ class TokenWithdrawal < ActiveRecord::Base
             payee_id == payee.id && token_type_id == token_t.id
           end
           votes.group_by { |payout_id, payout_amount, *| [payout_id, payout_amount] }
-          votes.each do |(payout_id, payout_amount), votes|
+          votes.each do |(payout_id, payout_amount), votes_group|
             break if required_amount == 0
-            votes.each do |(*, vote_amount_conf, vote_address, payee_id, token_type_id)|
+            votes_group.each do |(*, vote_amount_conf, vote_address, payee_id, token_type_id)|
               break if required_amount == 0 || payout_amount == 0
               input_amount = min([payout_amount, vote_amount_conf, required_amount])
               completed_inputs[payout_id] = [vote_address, input_amount,
@@ -134,10 +134,19 @@ class TokenWithdrawal < ActiveRecord::Base
           end
         end
 
+        tx_inputs = Hash.new
         inputs = expired_inputs.values + completed_inputs.values
-        inputs.map! { |(address, amount, *)| [address, amount] }
-        requests_outputs = Hash.new(BigDecimal(0))
-        outputs = requests.map { |tw| requests_outputs[tw.address] += tw.amount }.to_a
+        inputs.map { |(address, amount, *)| tx_inputs[address] = amount }
+        tx_outputs = Hash.new(BigDecimal(0))
+        requests.map { |tw| tx_outputs[tw.address] += tw.amount }
+        common_addr = tx_inputs.keys.to_set & tx_outputs.keys.to_set
+        common_addr.each do |address|
+          min_amount = min([tx_inputs[address], tx_outputs[address]])
+          tx_inputs[address] -= min_amount
+          tx_inputs.delete(address) if tx_inputs[address] == 0
+          tx_outputs[address] -= min_amount
+          tx_outputs.delete(address) if tx_outputs[address] == 0
+        end
 
         rpc = RPC.get_rpc(token_t)
         txid, tx = rpc.create_raw_tx(inputs, outputs)
