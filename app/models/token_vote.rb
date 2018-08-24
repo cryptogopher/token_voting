@@ -41,6 +41,7 @@ class TokenVote < ActiveRecord::Base
   after_initialize :set_defaults
 
   scope :active, -> { where(is_completed: false).where("expiration > ?", Time.current) }
+  scope :inactive, -> { where.not(id: active) }
   scope :completed, -> { where(is_completed: true) }
   scope :expired, -> { where(is_completed: false).where("expiration <= ?", Time.current) }
 
