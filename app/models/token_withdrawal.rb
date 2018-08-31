@@ -65,7 +65,7 @@ class TokenWithdrawal < ActiveRecord::Base
   end
 
   def amount_withdrawable
-    total = BigDecimal(0)
+    total = 0.to_d
     TokenWithdrawal.transaction do
       total += self.payee.token_payouts.token(self.token_type).sum(:amount)
       total += self.payee.token_votes.token(self.token_type).expired.sum(:amount_conf)
@@ -78,10 +78,10 @@ class TokenWithdrawal < ActiveRecord::Base
   end
 
   def self.process_requested
-    inputs = Hash.new { |h, k| h[k] = Hash.new(BigDecimal(0)) }
-    outputs = Hash.new { |h, k| h[k] = Hash.new(BigDecimal(0)) }
-    pending_outflows = Hash.new(BigDecimal(0))
-    pending_payouts = Hash.new(BigDecimal(0))
+    inputs = Hash.new { |h, k| h[k] = Hash.new(0.to_d) }
+    outputs = Hash.new { |h, k| h[k] = Hash.new(0.to_d) }
+    pending_outflows = Hash.new(0.to_d)
+    pending_payouts = Hash.new(0.to_d)
     payout_amounts = Hash.new
     vote_token_types = Hash.new
 
@@ -108,9 +108,9 @@ class TokenWithdrawal < ActiveRecord::Base
       requested_withdrawals.each do |withdrawal|
         required_amount = withdrawal.amount
 
-        inputs_diff = Hash.new(BigDecimal(0))
-        pending_outflows_diff = Hash.new(BigDecimal(0))
-        pending_payouts_diff = Hash.new(BigDecimal(0))
+        inputs_diff = Hash.new(0.to_d)
+        pending_outflows_diff = Hash.new(0.to_d)
+        pending_payouts_diff = Hash.new(0.to_d)
         votes_diff = []
 
         votes[[withdrawal.payee_id, withdrawal.token_type_id]].each do |vote|
@@ -162,11 +162,11 @@ class TokenWithdrawal < ActiveRecord::Base
           outputs[token_t].delete(address) if outputs[token_t][address] == 0
         end
 
-        # TODO: obsluga bledow RPC
         rpc = RPC.get_rpc(token_t)
         txid, tx = rpc.create_raw_tx(inputs[token_t], outputs[token_t])
         tx_params[token_t] = {txid: txid, tx: tx}
       end
+
       transactions = tx_params.keys.zip(TokenTransaction.create(tx_params.values)).to_h
       
       tp_updates, tp_deletes = pending_payouts.partition do |payout_id, pending_outflow|
@@ -194,38 +194,6 @@ class TokenWithdrawal < ActiveRecord::Base
   end
 
   protected
-
-  def list_expired_votes
-    TokenVote.expired
-      .joins('LEFT OUTER JOIN token_pending_outflows ON 
-              token_votes.id = token_pending_outflows.token_vote_id')
-      .group('token_votes.id')
-      .select('token_votes.id as id',
-              'token_votes.voter_id as user_id',
-              'token_votes.token_type_id as token_type_id',
-              'token_votes.amount_conf-SUM(token_pending_outflows.amount) as amount',
-              'token_votes.address as address',
-              'token_votes.is_completed as is_completed')
-      .having('amount > 0')
-      .group_by { |vote| [vote.user_id, vote.token_type_id] }
-  end
-
-  def list_completed_votes
-    TokenVote.completed.joins(:token_payout)
-      .joins('LEFT OUTER JOIN token_pending_outflows ON 
-              token_votes.id = token_pending_outflows.token_vote_id')
-      .group('token_votes.id')
-      .select('token_votes.id as id',
-              'token_payouts.payee_id as user_id',
-              'token_votes.token_type_id as token_type_id',
-              'token_votes.amount_conf-SUM(token_pending_outflows.amount) as amount',
-              'token_votes.address as address',
-              'token_votes.is_completed as is_completed',
-              'token_payouts.id as payout_id',
-              'token_payouts.amount as payout')
-      .having('amount > 0')
-      .group_by { |vote| [vote.user_id, vote.token_type_id] }
-  end
 
   def set_defaults
     if new_record?

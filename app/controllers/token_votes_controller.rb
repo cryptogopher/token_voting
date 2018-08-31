@@ -51,7 +51,9 @@ class TokenVotesController < ApplicationController
 
   def payout
     TokenWithdrawal.process_requested
-
+  rescue RPC::Error => e
+    flash[:error] = e.message
+  ensure
     respond_to do |format|
       format.js {
         @token_withdrawals = TokenWithdrawal.all.reload.pending

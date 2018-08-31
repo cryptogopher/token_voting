@@ -41,12 +41,33 @@ module RPC
       {}
     end
 
-    # Creates rawtransaction. Parameters are arrays containing:
-    # {address1: amount1, address2: amount2, ...}
+    # Creates rawtransaction. inputs/outputs are arrays containing:
+    # {address1: amount1, address2: amount2, ...}, change goes to inputs.
     def create_raw_tx(inputs, outputs)
+      inputs.default = 0.to_d
+      outputs.default = 0.to_d
       min_conf = TokenType.find_by(name: self.class.name.demodulize).min_conf
+
       utxos = self.list_unspent(min_conf, 9999999, inputs.keys)
-      ["txid", "tx"]
+      selected_utxos = []
+      utxos.each do |utxo|
+        address = utxo['address']
+        if utxo['solvable'] && (inputs[address] > 0)
+          amount = [utxo['amount'], inputs[address]].min
+          change = utxo['amount'] - amount
+          inputs[address] -= amount
+          outputs[address] += change if change > 0
+          selected_utxos << utxo
+        end
+      end
+      raise Error "Insufficient confirmed funds on inputs #{inputs}" if inputs.values.sum > 0
+
+      selected_utxos.each { |utxo| utxo.keep_if { |k,v| ['txid',  'vout'].include?(k) } }
+      outputs.keys.each { |k| outputs[k] = outputs[k].to_s('F') }
+      rtx = self.create_raw_transaction(selected_utxos, outputs)
+      raise Error, "Cannot create raw transaction to #{outputs}" unless rtx
+
+      [self.decode_raw_transaction(rtx)['txid'], rtx]
     end
 
     protected
