@@ -167,33 +167,29 @@ class TokenWithdrawal < ActiveRecord::Base
         txid, tx = rpc.create_raw_tx(inputs[token_t], outputs[token_t])
         tx_params[token_t] = {txid: txid, tx: tx}
       end
-      transactions = tx_params.keys.zip(TokenTransaction.create(tx_params.values))
+      transactions = tx_params.keys.zip(TokenTransaction.create(tx_params.values)).to_h
       
-      pp_update, pp_delete = pending_payouts.partition do |payout_id, pending_outflow|
+      tp_updates, tp_deletes = pending_payouts.partition do |payout_id, pending_outflow|
         payout_amounts[payout_id] > pending_outflow
       end
-      pp_update_params = []
-      pp_update_params += pp_update.map do |payout_id, pending_outflow|
+      tp_updates.map! do |payout_id, pending_outflow|
         [payout_id, {amount: payout_amounts[payout_id]-pending_outflow}]
       end
-      pp_update_params.transpose
-      TokenPayout.update(pp_update_params[0], pp_update_params[1])
-      pp_delete_params = []
-      pp_delete_params += pp_delete.map { |payout_id, *| payout_id }
-      TokenPayout.destroy(pp_delete_params)
+      TokenPayout.update(*tp_updates.transpose) unless tp_updates.empty?
+      tp_deletes.map! { |payout_id, *| payout_id }
+      TokenPayout.destroy(tp_deletes) unless tp_deletes.empty?
 
       po_params = pending_outflows.map do |vote_id, pending_outflow|
         {token_vote_id: vote_id,
          token_transaction: transactions[vote_token_types[vote_id]],
          amount: pending_outflow}
       end
-      TokenPendingOutflows.create(po_params)
+      TokenPendingOutflow.create(po_params) unless po_params.empty?
 
-      rw_params = requested_withdrawals.each do |withdrawal|
+      rw_params = requested_withdrawals.map do |withdrawal|
         [withdrawal.id, {token_transaction: transactions[withdrawal.token_type]}]
       end
-      rw_params.transpose
-      TokenWithdrawal.update(rw_params[0], rw_params[1])
+      TokenWithdrawal.update(*rw_params.transpose) unless rw_params.empty?
     end
   end
 
