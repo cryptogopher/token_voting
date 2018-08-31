@@ -44,7 +44,7 @@ module RPC
     # Creates rawtransaction. Parameters are arrays containing:
     # {address1: amount1, address2: amount2, ...}
     def create_raw_tx(inputs, outputs)
-      min_conf = TokenType.find_by(name: self.class.name).min_conf
+      min_conf = TokenType.find_by(name: self.class.name.demodulize).min_conf
       utxos = self.list_unspent(min_conf, 9999999, inputs.keys)
       ["txid", "tx"]
     end

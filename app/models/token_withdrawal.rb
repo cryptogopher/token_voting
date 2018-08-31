@@ -91,14 +91,15 @@ class TokenWithdrawal < ActiveRecord::Base
       .joins('LEFT OUTER JOIN token_pending_outflows ON 
               token_votes.id = token_pending_outflows.token_vote_id')
       .group('token_votes.id')
-      .select('token_votes.id as id',
-              'token_payouts.payee_id as user_id',
-              'token_votes.token_type_id as token_type_id',
-              'token_votes.amount_conf-SUM(token_pending_outflows.amount) as amount',
-              'token_votes.address as address',
-              'token_votes.is_completed as is_completed',
-              'token_payouts.id as payout_id',
-              'token_payouts.amount as payout')
+      .select(
+        'token_votes.id as id',
+        'COALESCE(token_payouts.payee_id, token_votes.voter_id) as user_id',
+        'token_votes.token_type_id as token_type_id',
+        'token_votes.amount_conf-COALESCE(SUM(token_pending_outflows.amount), 0) as amount',
+        'token_votes.address as address',
+        'token_votes.is_completed as is_completed',
+        'token_payouts.id as payout_id',
+        'token_payouts.amount as payout')
       .having('amount > 0')
       .group_by { |vote| [vote.user_id, vote.token_type_id] }
 
@@ -133,7 +134,7 @@ class TokenWithdrawal < ActiveRecord::Base
           end
           required_amount -= input_amount
 
-          if available_amount.call == 0 || (available_payout.call == 0 && vote.is_completed)
+          if available_amount.call == 0 || (vote.is_completed && (available_payout.call == 0))
             votes_diff << vote
           end
           break if required_amount == 0
@@ -150,7 +151,7 @@ class TokenWithdrawal < ActiveRecord::Base
         outputs[withdrawal.token_type][withdrawal.address] += withdrawal.amount
       end
 
-      transactions = Hash.new
+      tx_params = Hash.new
       outputs.keys.each do |token_t|
         common_addresses = inputs[token_t].keys.to_set & outputs[token_t].keys.to_set
         common_addresses.each do |address|
@@ -168,14 +169,16 @@ class TokenWithdrawal < ActiveRecord::Base
       end
       transactions = tx_params.keys.zip(TokenTransaction.create(tx_params.values))
       
-      pp_update, pp_delete = pending_payouts.parition do |payout_id, pending_outflow|
+      pp_update, pp_delete = pending_payouts.partition do |payout_id, pending_outflow|
         payout_amounts[payout_id] > pending_outflow
       end
+      pp_update_params = []
       pp_update_params += pp_update.map do |payout_id, pending_outflow|
         [payout_id, {amount: payout_amounts[payout_id]-pending_outflow}]
       end
       pp_update_params.transpose
       TokenPayout.update(pp_update_params[0], pp_update_params[1])
+      pp_delete_params = []
       pp_delete_params += pp_delete.map { |payout_id, *| payout_id }
       TokenPayout.destroy(pp_delete_params)
 
