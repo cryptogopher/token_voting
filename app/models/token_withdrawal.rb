@@ -1,6 +1,6 @@
 # Withdrawal assumptions:
 # - user withdraws amount without specifying exact TokenVotes from which amount
-# will be withdrawn. It is up to plugin to decide on optimal funds souce. User can
+# will be withdrawn. It is up to plugin to decide on optimal funds source. User can
 # withdraw sum of all available amounts in one go.
 # - user can withdraw part of the funds, including multiple withdraws of the
 # exact same amount to same output address(es).
@@ -10,6 +10,9 @@
 # merger of multiple withdrawals for the same token (incl. different users) in one tx.
 # - loss of information regarding withdrawals (e.g. token_withdrawals table corruption or
 # deletion) must not incur double withdrawals.
+# - fees are deduced from withdrawal amount to enable withdrawal of all
+# accounts. Plugin is not meant to be used as wallet, so control of exact output
+# amount is not required.
 #
 # Withdrawal statuses:
 # - requested - requested by user, tx not prepared, user can still cancel.
@@ -22,8 +25,8 @@
 # - processed - tx has been sent and has at least min_conf confirmations.
 # TokenPendingOutflows for processed withdrawal is canceled as it is
 # already reflected in TokenVotes#amount_conf.
-# - rejected - at the time of processing requested withdrawal, not ehough funds
-# are available (e.g. because completed issue has been reverted to uncompleted)
+# - rejected - at the time of processing requested withdrawal, not enough funds
+# is available (e.g. because completed issue has been reverted to uncompleted).
 
 class TokenWithdrawal < ActiveRecord::Base
   belongs_to :payee, class_name: 'User'

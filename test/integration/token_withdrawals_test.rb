@@ -177,7 +177,7 @@ class TokenWithdrawalNotifyTest < TokenVoting::NotificationIntegrationTest
 
     assert_equal 1, TokenWithdrawal.requested.count
     payout_token_votes(-1, 1, 1, 1)
-    sign_and_send_transactions
+    sign_and_send_transactions(@min_conf)
   end
 end
 

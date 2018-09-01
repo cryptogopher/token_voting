@@ -210,6 +210,10 @@ class TokenVote < ActiveRecord::Base
           vote.save!
         end
       end
+
+      #tx_ids = incoming_txs['transactions'].map { |tx| tx['txid'] }
+      #TokenTransaction.where(txid: tx_ids
+
       token_t.prev_sync_height = next_block_height
       token_t.save!
     end

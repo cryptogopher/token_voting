@@ -123,7 +123,7 @@ def payout_token_votes(tw_requested_diff, tw_pending_diff, tt_diff,  tpo_diff)
   assert_response :ok
 end
 
-def sign_and_send_transactions
+def sign_and_send_transactions(confs=0)
   txids = []
   transactions = TokenTransaction.pending.map { |tt| tt.tx }
   transactions.each do |rtx|
@@ -133,6 +133,9 @@ def sign_and_send_transactions
     txids << result
   end
   assert_in_mempool @network, *txids
+  assert_notifications 'blocknotify' => confs do
+    @network.generate(confs) if confs > 0
+  end
 end
 
 def destroy_token_vote(vote)
