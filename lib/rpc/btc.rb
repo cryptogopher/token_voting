@@ -89,15 +89,30 @@ module RPC
 
       fee_score = Hash.new
       inputs.map do |address, amounts|
-         fee_score[address] = fee_output_score + amounts.reduce(0) do |memo, (k,v)|
-           memo + (flat_inputs[k] > 0 ? fee_input_score[k]*v/flat_inputs[k] : 0)
+         fee_score[address] = fee_output_score[address] + amounts.reduce(0) do |memo, (k,v)|
+           memo + (flat_inputs[k] > 0 ? fee_input_score[k] * v / flat_inputs[k] : 0)
          end
       end
       total_fee_score = fee_score.values.sum
 
+      create_raw_tx = Proc.new do
+        result
+      end
+
+      # Estimate tx size
+      # TODO: check if 'size' is proper measure for witness transactions
       selected_utxos.each { |utxo| utxo.keep_if { |k,v| ['txid',  'vout'].include?(k) } }
-      outputs.keys.each { |k| outputs[k] = outputs[k].to_s('F') }
-      rtx = self.create_raw_transaction(selected_utxos, outputs)
+      raw_outputs = outputs.map { |address, amount| [address, amount.to_s('F')] }
+      rtx_est = self.create_raw_transaction(selected_utxos, raw_outputs.to_h)
+      raise Error, "Cannot create raw transaction to #{outputs}" unless rtx_est
+      tx_size = self.decode_raw_transaction(rtx_est)['size']
+
+      # Create correct tx
+      tx_fee = self.estimate_fee(25).to_d * tx_size / 1024
+      raw_outputs = outputs.map do |address, amount|
+        [address, (amount - fee_score[address] * tx_fee / total_fee_score).to_s('F')]
+      end
+      rtx = self.create_raw_transaction(selected_utxos, raw_outputs.to_h)
       raise Error, "Cannot create raw transaction to #{outputs}" unless rtx
 
       [self.decode_raw_transaction(rtx)['txid'], rtx]

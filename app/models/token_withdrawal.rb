@@ -85,25 +85,25 @@ class TokenWithdrawal < ActiveRecord::Base
     payout_amounts = Hash.new
     vote_token_types = Hash.new
 
-    votes =  TokenVote.inactive
-      .joins('LEFT OUTER JOIN token_payouts ON
-              token_votes.issue_id = token_payouts.issue_id')
-      .joins('LEFT OUTER JOIN token_pending_outflows ON 
-              token_votes.id = token_pending_outflows.token_vote_id')
-      .group('token_votes.id')
-      .select(
-        'token_votes.id as id',
-        'COALESCE(token_payouts.payee_id, token_votes.voter_id) as user_id',
-        'token_votes.token_type_id as token_type_id',
-        'token_votes.amount_conf-COALESCE(SUM(token_pending_outflows.amount), 0) as amount',
-        'token_votes.address as address',
-        'token_votes.is_completed as is_completed',
-        'token_payouts.id as payout_id',
-        'token_payouts.amount as payout')
-      .having('amount > 0')
-      .group_by { |vote| [vote.user_id, vote.token_type_id] }
-
     TokenWithdrawal.transaction do
+      votes =  TokenVote.inactive
+        .joins('LEFT OUTER JOIN token_payouts ON
+                token_votes.issue_id = token_payouts.issue_id')
+        .joins('LEFT OUTER JOIN token_pending_outflows ON 
+                token_votes.id = token_pending_outflows.token_vote_id')
+        .group('token_votes.id')
+        .select(
+          'token_votes.id as id',
+          'COALESCE(token_payouts.payee_id, token_votes.voter_id) as user_id',
+          'token_votes.token_type_id as token_type_id',
+          'token_votes.amount_conf-COALESCE(SUM(token_pending_outflows.amount), 0) as amount',
+          'token_votes.address as address',
+          'token_votes.is_completed as is_completed',
+          'token_payouts.id as payout_id',
+          'token_payouts.amount as payout')
+        .having('amount > 0')
+        .group_by { |vote| [vote.user_id, vote.token_type_id] }
+
       requested_withdrawals = TokenWithdrawal.requested.order(id: :asc)
       requested_withdrawals.each do |withdrawal|
         required_amount = withdrawal.amount
@@ -114,16 +114,16 @@ class TokenWithdrawal < ActiveRecord::Base
         votes_diff = []
 
         votes[[withdrawal.payee_id, withdrawal.token_type_id]].each do |vote|
-          available_amount = lambda do
-            vote.amount-pending_outflows[vote.id]-pending_outflows_diff[vote.id]
+          bounds << required_amount
+          bounds << vote.amount - pending_outflows[vote.id] - pending_outflows_diff[vote.id]
+          if vote.is_completed
+            bounds << vote.payout - pending_payouts[vote.payout_id] -
+              pending_payouts_diff[vote.payout_id]
           end
-          available_payout = lambda do
-            vote.payout-pending_payouts[vote.payout_id]-pending_payouts_diff[vote.payout_id]
-          end
-
-          bounds = [required_amount, available_amount.call]
-          bounds << available_payout.call if vote.is_completed
           input_amount = bounds.min
+          if bounds.drop(1).min == input_amount
+            votes_diff << vote
+          end
 
           inputs_diff[vote.address] += input_amount
           pending_outflows_diff[vote.id] += input_amount
@@ -134,9 +134,6 @@ class TokenWithdrawal < ActiveRecord::Base
           end
           required_amount -= input_amount
 
-          if available_amount.call == 0 || (vote.is_completed && (available_payout.call == 0))
-            votes_diff << vote
-          end
           break if required_amount == 0
         end
 
