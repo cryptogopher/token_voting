@@ -62,7 +62,9 @@ module RPC
       # FIXME: fee computing
       #inputs.default = 0.to_d
       #outputs.default = 0.to_d
-      min_conf = TokenType.find_by(name: self.class.name.demodulize).min_conf
+      token_t = TokenType.find_by(name: self.class.name.demodulize)
+      min_conf = token_t.min_conf
+      precision = token_t.precision
 
       utxos = self.list_unspent(min_conf, 9999999, flat_inputs.keys)
       selected_utxos = []
@@ -111,7 +113,8 @@ module RPC
       # Create correct tx
       tx_fee = self.estimate_fee(25).to_d * tx_size / 1024
       raw_outputs = outputs.map do |address, amount|
-        [address, (amount - fee_score[address] * tx_fee / total_fee_score).to_s('F')]
+        fee_share = (amount - fee_score[address] * tx_fee / total_fee_score).round(precision)
+        [address, fee_share.to_s('F')]
       end
       rtx = self.create_raw_transaction(selected_utxos, raw_outputs.to_h)
       raise Error, "Cannot create raw transaction to #{outputs}" unless rtx

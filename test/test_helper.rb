@@ -132,7 +132,7 @@ def sign_and_send_transactions
     assert result
     txids << result
   end
-  assert_in_mempool @network, txids
+  assert_in_mempool @network, *txids
 end
 
 def destroy_token_vote(vote)
