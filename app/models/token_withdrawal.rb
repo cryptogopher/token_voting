@@ -114,7 +114,7 @@ class TokenWithdrawal < ActiveRecord::Base
         votes_diff = []
 
         votes[[withdrawal.payee_id, withdrawal.token_type_id]].each do |vote|
-          bounds << required_amount
+          bounds = [required_amount]
           bounds << vote.amount - pending_outflows[vote.id] - pending_outflows_diff[vote.id]
           if vote.is_completed
             bounds << vote.payout - pending_payouts[vote.payout_id] -
@@ -142,7 +142,7 @@ class TokenWithdrawal < ActiveRecord::Base
           next
         end
         inputs_hash = inputs[withdrawal.token_type][withdrawal.address]
-        inputs_hash.merge(inputs_diff) { |k, v1, v2| v1+v2 }
+        inputs_hash.merge!(inputs_diff) { |k, v1, v2| v1+v2 }
         outputs[withdrawal.token_type][withdrawal.address] += withdrawal.amount
         pending_outflows.merge!(pending_outflows_diff) { |k, v1, v2| v1+v2 }
         pending_payouts.merge!(pending_payouts_diff) { |k, v1, v2| v1+v2 }

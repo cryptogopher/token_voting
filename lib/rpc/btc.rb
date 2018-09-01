@@ -87,7 +87,7 @@ module RPC
         raise Error "Insufficient confirmed funds on inputs #{flat_inputs}"
       end
 
-      fee_score = Hash.new
+      fee_score = Hash.new(0.to_d)
       inputs.map do |address, amounts|
          fee_score[address] = fee_output_score[address] + amounts.reduce(0) do |memo, (k,v)|
            memo + (flat_inputs[k] > 0 ? fee_input_score[k] * v / flat_inputs[k] : 0)
@@ -107,6 +107,7 @@ module RPC
       raise Error, "Cannot create raw transaction to #{outputs}" unless rtx_est
       tx_size = self.decode_raw_transaction(rtx_est)['size']
 
+      #byebug
       # Create correct tx
       tx_fee = self.estimate_fee(25).to_d * tx_size / 1024
       raw_outputs = outputs.map do |address, amount|
