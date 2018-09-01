@@ -176,16 +176,8 @@ class TokenWithdrawalNotifyTest < TokenVoting::NotificationIntegrationTest
     withdraw_token_votes(amount: 0.33)
 
     assert_equal 1, TokenWithdrawal.requested.count
-    assert_difference 'TokenTransaction.count', 1 do
-      assert_difference 'TokenWithdrawal.pending.count', 1 do
-        assert_difference 'TokenWithdrawal.requested.count', -1 do
-          assert_difference 'TokenPendingOutflow.count', 1 do
-            post "#{payout_token_votes_path}.js"
-          end
-        end
-      end
-    end
-    assert_response :ok
+    payout_token_votes(-1, 1, 1, 1)
+    sign_and_send_transactions
   end
 end
 

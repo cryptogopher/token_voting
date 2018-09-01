@@ -44,6 +44,7 @@ module RPC
     # Creates rawtransaction. inputs/outputs are arrays containing:
     # {address1: amount1, address2: amount2, ...}, change goes to inputs.
     def create_raw_tx(inputs, outputs)
+      # FIXME: fee computing
       inputs.default = 0.to_d
       outputs.default = 0.to_d
       min_conf = TokenType.find_by(name: self.class.name.demodulize).min_conf

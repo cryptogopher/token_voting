@@ -7,6 +7,9 @@ class TokenTransaction < ActiveRecord::Base
 
   after_initialize :set_defaults
   
+  scope :pending, -> { where(is_processed: false) }
+  scope :processed, -> { where(is_processed: true) }
+
   protected
 
   def set_defaults

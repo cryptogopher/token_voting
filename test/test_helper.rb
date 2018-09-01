@@ -75,6 +75,14 @@ def create_token_vote(issue=issues(:issue_01), **attributes)
   TokenVote.last
 end
 
+def fund_token_vote(vote, amount=0.0, confs=0)
+  assert_notifications 'blocknotify' => confs do
+    @network.send_to_address(vote.address, amount) if amount > 0.0
+    @network.generate(confs) if confs > 0
+  end
+  TokenVote.all.reload
+end
+
 def withdraw_token_votes(**attributes)
   attributes[:token_type_id] ||= token_types(:BTCREG).id
   attributes[:amount] ||= 1.0
@@ -101,20 +109,38 @@ def withdraw_token_votes_should_fail(**attributes)
   assert_response :ok
 end
 
+def payout_token_votes(tw_requested_diff, tw_pending_diff, tt_diff,  tpo_diff)
+  assert_difference 'TokenWithdrawal.requested.count', tw_requested_diff do
+    assert_difference 'TokenWithdrawal.pending.count', tw_pending_diff do
+      assert_difference 'TokenTransaction.count', tt_diff do
+        assert_difference 'TokenPendingOutflow.count', tpo_diff do
+          post "#{payout_token_votes_path}.js"
+          assert_nil flash[:error]
+        end
+      end
+    end
+  end
+  assert_response :ok
+end
+
+def sign_and_send_transactions
+  txids = []
+  transactions = TokenTransaction.pending.map { |tt| tt.tx }
+  transactions.each do |rtx|
+    stx = @wallet.sign_raw_transaction(rtx)
+    result = @wallet.send_raw_transaction(stx['hex'])
+    assert result
+    txids << result
+  end
+  assert_in_mempool @network, txids
+end
+
 def destroy_token_vote(vote)
   assert_difference 'TokenVote.count', -1 do
     delete "#{token_vote_path(vote)}.js"
     assert_nil flash[:error]
   end
   assert_response :ok
-end
-
-def fund_token_vote(vote, amount=0.0, confs=0)
-  assert_notifications 'blocknotify' => confs do
-    @network.send_to_address(vote.address, amount) if amount > 0.0
-    @network.generate(confs) if confs > 0
-  end
-  TokenVote.all.reload
 end
 
 def update_issue_status(issue, status)
