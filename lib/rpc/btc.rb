@@ -41,27 +41,59 @@ module RPC
       {}
     end
 
-    # Creates rawtransaction. inputs/outputs are arrays containing:
-    # {address1: amount1, address2: amount2, ...}, change goes to inputs.
+    # Creates rawtransaction. inputs is a hash of hashes:
+    # {output_addr1: {input_addr1: amount1, input_addr2: amount2}, output_addr2: {...}, ...}
+    # (list of input amounts per output is necessary fo fair fee calculation)
+    # outputs is a hash:
+    # {output_addr1: output_amount1, output_addr2: output_amount2, ...}
+    # change goes to inputs.
     def create_raw_tx(inputs, outputs)
+      flat_inputs = inputs.values.reduce { |memo, v| memo.merge!(v) { |k, vm, vn| vm+vn } }
+
+      common_addresses = flat_inputs.keys.to_set & outputs.keys.to_set
+      common_addresses.each do |address|
+        min_amount = min([flat_inputs[address], outputs[address]])
+        flat_inputs[address] -= min_amount
+        flat_inputs.delete(address) if flat_inputs[address] == 0
+        outputs[address] -= min_amount
+        outputs.delete(address) if outputs[address] == 0
+      end
+
       # FIXME: fee computing
-      inputs.default = 0.to_d
-      outputs.default = 0.to_d
+      #inputs.default = 0.to_d
+      #outputs.default = 0.to_d
       min_conf = TokenType.find_by(name: self.class.name.demodulize).min_conf
 
-      utxos = self.list_unspent(min_conf, 9999999, inputs.keys)
+      utxos = self.list_unspent(min_conf, 9999999, flat_inputs.keys)
       selected_utxos = []
+      fee_input_score = Hash.new(0)
+      fee_output_score = Hash.new { |h, k| h[k] = (outputs.include?(k) ? 1 : 0)  }
       utxos.each do |utxo|
         address = utxo['address']
-        if utxo['solvable'] && (inputs[address] > 0)
-          amount = [utxo['amount'], inputs[address]].min
+        if utxo['solvable'] && (flat_inputs[address] > 0)
+          amount = [utxo['amount'], flat_inputs[address]].min
           change = utxo['amount'] - amount
-          inputs[address] -= amount
-          outputs[address] += change if change > 0
+          flat_inputs[address] -= amount
+          if change > 0
+            fee_output_score[address] += 1 if outputs[address] == 0
+            outputs[address] += change
+          end
+          fee_input_score[address] += 1
           selected_utxos << utxo
         end
       end
-      raise Error "Insufficient confirmed funds on inputs #{inputs}" if inputs.values.sum > 0
+
+      if flat_inputs.values.sum > 0
+        raise Error "Insufficient confirmed funds on inputs #{flat_inputs}"
+      end
+
+      fee_score = Hash.new
+      inputs.map do |address, amounts|
+         fee_score[address] = fee_output_score + amounts.reduce(0) do |memo, (k,v)|
+           memo + (flat_inputs[k] > 0 ? fee_input_score[k]*v/flat_inputs[k] : 0)
+         end
+      end
+      total_fee_score = fee_score.values.sum
 
       selected_utxos.each { |utxo| utxo.keep_if { |k,v| ['txid',  'vout'].include?(k) } }
       outputs.keys.each { |k| outputs[k] = outputs[k].to_s('F') }

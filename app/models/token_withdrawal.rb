@@ -78,7 +78,7 @@ class TokenWithdrawal < ActiveRecord::Base
   end
 
   def self.process_requested
-    inputs = Hash.new { |h, k| h[k] = Hash.new(0.to_d) }
+    inputs = Hash.new { |h1, k1| h1[k1] = Hash.new { |h2, k2| h2[k2] = Hash.new(0.to_d) } }
     outputs = Hash.new { |h, k| h[k] = Hash.new(0.to_d) }
     pending_outflows = Hash.new(0.to_d)
     pending_payouts = Hash.new(0.to_d)
@@ -144,24 +144,16 @@ class TokenWithdrawal < ActiveRecord::Base
           withdrawal.reject!
           next
         end
-        inputs[withdrawal.token_type].merge!(inputs_diff) { |k, v1, v2| v1+v2 }
+        inputs_hash = inputs[withdrawal.token_type][withdrawal.address]
+        inputs_hash.merge(inputs_diff) { |k, v1, v2| v1+v2 }
+        outputs[withdrawal.token_type][withdrawal.address] += withdrawal.amount
         pending_outflows.merge!(pending_outflows_diff) { |k, v1, v2| v1+v2 }
         pending_payouts.merge!(pending_payouts_diff) { |k, v1, v2| v1+v2 }
         votes[[withdrawal.payee_id, withdrawal.token_type_id]] -= votes_diff
-        outputs[withdrawal.token_type][withdrawal.address] += withdrawal.amount
       end
 
       tx_params = Hash.new
       outputs.keys.each do |token_t|
-        common_addresses = inputs[token_t].keys.to_set & outputs[token_t].keys.to_set
-        common_addresses.each do |address|
-          min_amount = min([inputs[token_t][address], outputs[token_t][address]])
-          inputs[token_t][address] -= min_amount
-          inputs[token_t].delete(address) if inputs[token_t][address] == 0
-          outputs[token_t][address] -= min_amount
-          outputs[token_t].delete(address) if outputs[token_t][address] == 0
-        end
-
         rpc = RPC.get_rpc(token_t)
         txid, tx = rpc.create_raw_tx(inputs[token_t], outputs[token_t])
         tx_params[token_t] = {txid: txid, tx: tx}
