@@ -203,6 +203,7 @@ class TokenVote < ActiveRecord::Base
     return if token_t.prev_sync_height >= next_block_height
 
     TokenVote.transaction do
+      # TODO: batch update_amounts for multiple txs
       incoming_txs['transactions'].each do |tx|
         inputs, outputs = rpc.get_tx_addresses(tx['txid'])
         TokenVote.where(address: inputs+outputs, token_type: token_t).each do |vote|
@@ -211,8 +212,13 @@ class TokenVote < ActiveRecord::Base
         end
       end
 
-      #tx_ids = incoming_txs['transactions'].map { |tx| tx['txid'] }
-      #TokenTransaction.where(txid: tx_ids
+      tx_ids = incoming_txs['transactions'].map { |tx| tx['txid'] }
+      TokenTransaction.pending.includes(:token_withdrawals)
+        .where(txid: tx_ids, token_withdrawals: {token_type: token_t})
+        .references(:token_withdrawals).update_all(is_processed: true)
+      TokenPendingOutflow.includes(:token_transactions)
+        .delete_all(token_transactions: {is_processed: true})
+        .references(:token_transactions)
 
       token_t.prev_sync_height = next_block_height
       token_t.save!
