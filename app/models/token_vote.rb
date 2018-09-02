@@ -155,17 +155,6 @@ class TokenVote < ActiveRecord::Base
     self.address = new_address
   end
 
-  def update_amounts
-    rpc = RPC.get_rpc(self.token_type)
-    # TODO: does it count coinbase txs?
-    utxos = rpc.list_unspent(0, 9999999, [self.address])
-    utxos_conf, utxos_unconf =
-      utxos.partition { |utxo| utxo['confirmations'] >= self.token_type.min_conf }
-
-    self.amount_conf = utxos_conf.sum { |utxo| utxo['amount'] }
-    self.amount_unconf = utxos_unconf.sum { |utxo| utxo['amount'] }
-  end
-
   def self.compute_stats(token_votes)
     total_stats = Hash.new {|hash, key| hash[key] = Hash.new}
     STAT_PERIODS.values.each do |period|
@@ -181,13 +170,23 @@ class TokenVote < ActiveRecord::Base
     return total_stats
   end
 
-  def self.process_tx(token_t, txid)
+  def self.process_tx(token_t, txids)
     rpc = RPC.get_rpc(token_t)
-    inputs, outputs = rpc.get_tx_addresses(txid)
-    TokenVote.where(address: inputs+outputs, token_type: token_t).each do |vote|
-      vote.update_amounts
-      vote.save!
+
+    tx_addrs = txids.map { |txid| rpc.get_tx_addresses(txid) }.flatten
+    tv_addrs = TokenVote.where(address: tx_addrs, token_type: token_t)
+      .pluck(:address, :id).to_h
+
+    # TODO: does it count coinbase txs?
+    utxos = rpc.list_unspent(0, 9999999, tv_addrs.keys)
+    amounts = Hash.new
+    tv_addrs.values.each { |id| amounts[id] = {amount_conf: 0.to_d, amount_unconf: 0.to_d} }
+    utxos.each do |utxo|
+      key = utxo['confirmations'] >= token_t.min_conf ? :amount_conf : :amount_unconf
+      amounts[tv_addrs[utxo['address']]][key] += utxo['amount']
     end
+
+    TokenVote.update(amounts.keys, amounts.values)
   end
 
   def self.process_block(token_t, blockhash)
@@ -203,22 +202,17 @@ class TokenVote < ActiveRecord::Base
     return if token_t.prev_sync_height >= next_block_height
 
     TokenVote.transaction do
-      # TODO: batch update_amounts for multiple txs
-      incoming_txs['transactions'].each do |tx|
-        inputs, outputs = rpc.get_tx_addresses(tx['txid'])
-        TokenVote.where(address: inputs+outputs, token_type: token_t).each do |vote|
-          vote.update_amounts
-          vote.save!
-        end
-      end
+      txids = incoming_txs['transactions'].map { |tx| tx['txid'] }
+      self.process_tx(token_t, txids)
 
-      tx_ids = incoming_txs['transactions'].map { |tx| tx['txid'] }
-      TokenTransaction.pending.includes(:token_withdrawals)
-        .where(txid: tx_ids, token_withdrawals: {token_type: token_t})
-        .references(:token_withdrawals).update_all(is_processed: true)
-      TokenPendingOutflow.includes(:token_transactions)
-        .delete_all(token_transactions: {is_processed: true})
-        .references(:token_transactions)
+      tt_ids = TokenTransaction.pending.includes(:token_withdrawals)
+        .where(txid: txids, token_withdrawals: {token_type: token_t})
+        .references(:token_withdrawals).pluck(:id)
+      TokenTransaction.where(id: tt_ids).update_all(is_processed: true)
+      tpo_ids = TokenPendingOutflow.includes(:token_transaction)
+        .where(token_transactions: {is_processed: true})
+        .references(:token_transaction).pluck(:id)
+      TokenPendingOutflow.where(id: tpo_ids).delete_all
 
       token_t.prev_sync_height = next_block_height
       token_t.save!

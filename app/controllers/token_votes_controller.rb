@@ -9,7 +9,7 @@ class TokenVotesController < ApplicationController
   helper IssuesHelper
 
   def create
-    @token_vote = TokenVote.new(token_votes_params)
+    @token_vote = TokenVote.new(token_vote_params)
     @token_vote.voter = User.current
     @token_vote.issue = @issue
     @token_vote.generate_address
@@ -66,7 +66,7 @@ class TokenVotesController < ApplicationController
   def walletnotify
     service_api_request {
       token_type = TokenType.find_by_name!(params[:token_type_name])
-      TokenVote.process_tx(token_type, params[:txid])
+      TokenVote.process_tx(token_type, [params[:txid]])
     }
   end
 
@@ -97,7 +97,7 @@ class TokenVotesController < ApplicationController
     end
   end
 
-  def token_votes_params
+  def token_vote_params
     params.require(:token_vote).permit(:token_type_id, :duration)
   end
 

@@ -201,12 +201,11 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
   def test_blocknotify_after_min_conf_minus_1_confirmations_of_tx
     log_user 'alice', 'foo'
     vote1 = create_token_vote
-    min_conf = vote1.token_type.min_conf
 
-    assert_operator min_conf, :>, 1
-    assert_notifications 'blocknotify' => (min_conf-1) do
+    assert_operator @min_conf, :>, 1
+    assert_notifications 'blocknotify' => (@min_conf-1) do
       txid = @network.send_to_address(vote1.address, 0.8)
-      @network.generate(min_conf-1)
+      @network.generate(@min_conf-1)
     end
     vote1.reload
     assert_equal vote1.amount_unconf, 0.8
@@ -216,11 +215,10 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
   def test_blocknotify_after_min_conf_confirmations_of_tx
     log_user 'alice', 'foo'
     vote1 = create_token_vote
-    min_conf = vote1.token_type.min_conf
 
-    assert_notifications 'blocknotify' => min_conf do
+    assert_notifications 'blocknotify' => @min_conf do
       txid = @network.send_to_address(vote1.address, 1.2)
-      @network.generate(min_conf)
+      @network.generate(@min_conf)
     end
     vote1.reload
     assert_equal vote1.amount_unconf, 0.0

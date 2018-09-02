@@ -109,7 +109,6 @@ module RPC
       raise Error, "Cannot create raw transaction to #{outputs}" unless rtx_est
       tx_size = self.decode_raw_transaction(rtx_est)['size']
 
-      #byebug
       # Create correct tx
       tx_fee = self.estimate_fee(25).to_d * tx_size / 1024
       raw_outputs = outputs.map do |address, amount|
