@@ -183,7 +183,7 @@ class TokenVote < ActiveRecord::Base
     tv_addrs.values.each { |id| amounts[id] = {amount_conf: 0.to_d, amount_unconf: 0.to_d} }
     utxos.each do |utxo|
       key = utxo['confirmations'] >= token_t.min_conf ? :amount_conf : :amount_unconf
-      amounts[tv_addrs[utxo['address']]][key] += utxo['amount']
+      amounts[tv_addrs[utxo['address']]][key] += utxo['amount'] if utxo['solvable']
     end
 
     TokenVote.update(amounts.keys, amounts.values)
