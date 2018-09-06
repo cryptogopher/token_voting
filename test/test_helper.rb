@@ -109,13 +109,16 @@ def withdraw_token_votes_should_fail(**attributes)
   assert_response :ok
 end
 
-def payout_token_votes(tw_requested_diff, tw_pending_diff, tt_diff,  tpo_diff)
-  assert_difference 'TokenWithdrawal.requested.count', tw_requested_diff do
-    assert_difference 'TokenWithdrawal.pending.count', tw_pending_diff do
-      assert_difference 'TokenTransaction.count', tt_diff do
-        assert_difference 'TokenPendingOutflow.count', tpo_diff do
-          post "#{payout_token_votes_path}.js"
-          assert_nil flash[:error]
+def payout_token_votes(**diffs)
+  diffs.default = 0
+  assert_difference 'TokenWithdrawal.requested.count', diffs[:tw_requested] do
+    assert_difference 'TokenWithdrawal.pending.count', diffs[:tw_pending] do
+      assert_difference 'TokenWithdrawal.processed.count', diffs[:tw_processed] do
+        assert_difference 'TokenTransaction.count', diffs[:tt] do
+          assert_difference 'TokenPendingOutflow.count', diffs[:tpo] do
+            post "#{payout_token_votes_path}.js"
+            assert_nil flash[:error]
+          end
         end
       end
     end
@@ -126,14 +129,14 @@ end
 def sign_and_send_transactions(confs=0)
   txids = []
   transactions = TokenTransaction.pending.map { |tt| tt.tx }
-  transactions.each do |rtx|
-    stx = @wallet.sign_raw_transaction(rtx)
-    result = @wallet.send_raw_transaction(stx['hex'])
-    assert result
-    txids << result
-  end
-  assert_in_mempool @network, *txids
-  assert_notifications 'blocknotify' => confs do
+  assert_notifications 'blocknotify' => confs, 'walletnotify' => 2*transactions.length do
+    transactions.each do |rtx|
+      stx = @wallet.sign_raw_transaction(rtx)
+      result = @wallet.send_raw_transaction(stx['hex'])
+      assert result
+      txids << result
+    end
+    assert_in_mempool @network, *txids
     @network.generate(confs) if confs > 0
   end
 end
