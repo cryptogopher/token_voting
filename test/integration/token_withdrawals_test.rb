@@ -176,8 +176,24 @@ class TokenWithdrawalNotifyTest < TokenVoting::NotificationIntegrationTest
     withdraw_token_votes(amount: 0.33)
 
     assert_equal 1, TokenWithdrawal.requested.count
+    payout_token_votes(tw_req: -1, tw_rej: 0, tt: 1, tpo: 1)
+    sign_and_send_transactions(@min_conf, tw: 1, tt: 1, tpo: -1)
+  end
+
+  def test_payout_one_requested_withdrawal_from_completed_vote
+    log_user 'alice', 'foo'
+    vote1 = create_token_vote
+    fund_token_vote(vote1, 0.68, @min_conf)
+    travel(1.day+1.hour)
+    withdraw_token_votes(amount: 0.33)
+
+    assert_equal 1, TokenWithdrawal.requested.count
     payout_token_votes(tw_requested: -1, tw_pending: 1, tw_processed: 0, tt: 1, tpo: 1)
-    sign_and_send_transactions(@min_conf)
+    assert_difference 'TokenTransaction.pending.count', -1 do
+      assert_difference 'TokenTransaction.processed.count', 1 do
+        sign_and_send_transactions(@min_conf)
+      end
+    end
   end
 end
 

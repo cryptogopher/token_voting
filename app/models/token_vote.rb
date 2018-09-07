@@ -192,18 +192,22 @@ class TokenVote < ActiveRecord::Base
   def self.process_block(token_t, blockhash)
     rpc = RPC.get_rpc(token_t)
 
-    # Update amount_conf/_unconf for txs confirmed since last synced block.
-    # - amount_conf/_unconf must be updated for all confirmed txs, as 
-    # 'walletnotify' may miss txs and they won't show as unconfirmed.
-    # (so it is not enough to update amounts only for amount_unconf > 0 votes here).
-    prev_blockhash = rpc.get_block_hash(token_t.prev_sync_height)
-    incoming_txs = rpc.list_since_block(prev_blockhash, token_t.min_conf, true)
-    next_block_height = rpc.get_block(incoming_txs['lastblock'])['height']
-    return if token_t.prev_sync_height >= next_block_height
-
     TokenVote.transaction do
-      txids = incoming_txs['transactions'].map { |tx| tx['txid'] }
+      # Update amount_conf/_unconf for txs confirmed since last synced block.
+      # - amount_conf/_unconf must be updated for all confirmed txs, as 
+      # 'walletnotify' may miss txs and they won't show as unconfirmed.
+      # (so it is not enough to update amounts only for amount_unconf > 0 votes here).
+      prev_blockhash = rpc.get_block_hash(token_t.prev_sync_height)
+      incoming_txs = rpc.list_since_block(prev_blockhash, token_t.min_conf, true)
+      next_block_height = rpc.get_block(incoming_txs['lastblock'])['height']
+      return if token_t.prev_sync_height >= next_block_height
+
+      incoming_txs['transactions'].reject! { |tx| tx['confirmations'] < token_t.min_conf }
+      txids = incoming_txs['transactions'].map { |tx| tx['txid'] }.uniq
       self.process_tx(token_t, txids)
+
+      #puts token_t.prev_sync_height, next_block_height, prev_blockhash
+      #puts txids.inspect
 
       tt_ids = TokenTransaction.pending.includes(:token_withdrawals)
         .where(txid: txids, token_withdrawals: {token_type: token_t})
