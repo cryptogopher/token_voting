@@ -177,6 +177,9 @@ class TokenVote < ActiveRecord::Base
     tv_addrs = TokenVote.where(address: tx_addrs, token_type: token_t)
       .pluck(:address, :id).to_h
 
+    # FIXME: what if tv_addrs is empty? (e.g. txid is a wallet tx but no
+    # TokenVote exists for it)
+
     # TODO: does it count coinbase txs?
     utxos = rpc.list_unspent(0, 9999999, tv_addrs.keys)
     amounts = Hash.new

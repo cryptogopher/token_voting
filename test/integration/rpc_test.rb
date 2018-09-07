@@ -63,5 +63,18 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     assert_equal 0.97, vote1.amount_conf
     assert_equal 0.599, vote2.amount_conf
   end
+
+  def test_rpc_no_txid_malleability
+    utxos = @network.list_unspent(1, 9999999)
+    utxo = utxos.find { |u| u['amount'] > 0 && u['spendable'] == true }
+    assert utxo
+
+    outputs = {@network.get_new_address => utxo['amount']}
+    rtx = @network.create_raw_transaction([utxo], outputs)
+    unsigned_txid = @network.decode_raw_transaction(rtx)['txid']
+    stx = @network.sign_raw_transaction(rtx)
+    signed_txid = @network.decode_raw_transaction(stx['hex'])['txid']
+    assert_equal unsigned_txid, signed_txid
+  end
 end
 
