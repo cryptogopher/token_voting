@@ -34,6 +34,19 @@ module RPC
       end
     end
 
+    # Normalized transaction ID computation loosely based on
+    # https://github.com/bitcoin/bips/blob/master/bip-0140.mediawiki
+    def get_normalized_txid(raw_tx)
+      raw_tx = self.decode_raw_transaction(raw_tx) if raw_tx.instance_of? String
+      raw_tx.keep_if { |k,v| ['version', 'locktime', 'vin', 'vout'].include?(k) }
+      raw_tx['vin'].each do |vin|
+        vin['scriptSig']['asm'] = ''
+        vin['scriptSig']['hex'] = ''
+      end
+      first_digest = Digest::SHA256.digest(raw_tx.to_json)
+      Digest::SHA256.hexdigest(first_digest)
+    end
+
     # getmempoolentry which does not throw exception if txid is not in mempool.
     def get_mempool_entry(txid)
       self.getmempoolentry(txid)
@@ -97,10 +110,6 @@ module RPC
       end
       total_fee_score = fee_score.values.sum
 
-      create_raw_tx = Proc.new do
-        result
-      end
-
       # Estimate tx size
       # TODO: check if 'size' is proper measure for witness transactions
       selected_utxos.each { |utxo| utxo.keep_if { |k,v| ['txid',  'vout'].include?(k) } }
@@ -118,7 +127,7 @@ module RPC
       rtx = self.create_raw_transaction(selected_utxos, raw_outputs.to_h)
       raise Error, "Cannot create raw transaction to #{outputs}" unless rtx
 
-      [self.decode_raw_transaction(rtx)['txid'], rtx]
+      [self.get_normalized_txid(rtx), rtx]
     end
 
     protected
