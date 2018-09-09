@@ -155,8 +155,8 @@ class TokenWithdrawal < ActiveRecord::Base
       tx_params = Hash.new
       outputs.keys.each do |token_t|
         rpc = RPC.get_rpc(token_t)
-        txid, tx = rpc.create_raw_tx(inputs[token_t], outputs[token_t])
-        tx_params[token_t] = {txid: txid, tx: tx}
+        ntxid, tx = rpc.create_raw_tx(inputs[token_t], outputs[token_t])
+        tx_params[token_t] = {ntxid: ntxid, tx: tx}
       end
 
       transactions = tx_params.keys.zip(TokenTransaction.create(tx_params.values)).to_h

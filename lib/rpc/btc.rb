@@ -72,9 +72,6 @@ module RPC
         outputs.delete(address) if outputs[address] == 0
       end
 
-      # FIXME: fee computing
-      #inputs.default = 0.to_d
-      #outputs.default = 0.to_d
       token_t = TokenType.find_by(name: self.class.name.demodulize)
       min_conf = token_t.min_conf
       precision = token_t.precision

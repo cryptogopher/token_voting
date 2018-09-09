@@ -2,7 +2,7 @@ class TokenTransaction < ActiveRecord::Base
   has_many :token_withdrawals
   has_many :token_pending_outflows
 
-  validates :txid, :tx, presence: true
+  validates :ntxid, :tx, presence: true
   validates :is_processed, inclusion: [false, true]
 
   after_initialize :set_defaults
