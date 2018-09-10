@@ -42,6 +42,7 @@ module RPC
       raw_tx['vin'].each do |vin|
         vin['scriptSig']['asm'] = ''
         vin['scriptSig']['hex'] = ''
+        vin.delete('txinwitness')
       end
       first_digest = Digest::SHA256.digest(raw_tx.to_json)
       Digest::SHA256.hexdigest(first_digest)

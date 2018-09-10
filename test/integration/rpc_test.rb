@@ -64,30 +64,39 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     assert_equal 0.599, vote2.amount_conf
   end
 
-  def test_rpc_get_normalized_txid
-    utxos = @network.list_unspent(1, 9999999)
-    utxo = utxos.find { |u| u['amount'] > 0.0001 && u['spendable'] == true }
-    assert utxo
-    outputs = {@network.get_new_address => (utxo['amount']-0.00005.to_d)}
+  def test_rpc_get_normalized_txid_for_all_address_types
+    ['legacy', 'p2sh-segwit', 'bech32'].each do |address_type|
+      from_address = @network.get_new_address('', address_type)
+      to_address = @network.get_new_address('', address_type)
 
-    rtx = @network.create_raw_transaction([utxo], outputs)
-    unsigned_ntxid = @network.get_normalized_txid(rtx)
-    stx = @network.sign_raw_transaction(rtx)
-    signed_ntxid = @network.get_normalized_txid(stx['hex'])
-    assert_equal unsigned_ntxid, signed_ntxid
+      assert_notifications 'blocknotify' => 1 do
+        txid = @network.send_to_address(from_address, 0.1)
+        assert txid
+        @network.generate(1)
+      end
+      utxos = @network.list_unspent(1, 9999999, [from_address])
+      amount = utxos.sum { |utxo| utxo['amount'] }
+      outputs = {to_address => amount - 0.0001}
 
-    txid = nil
-    assert_notifications 'blocknotify' => 1 do
-      txid = @network.send_raw_transaction(stx['hex'])
-      assert txid
-      assert_in_mempool @wallet, txid
-      @network.generate(1)
+      rtx = @network.create_raw_transaction(utxos, outputs)
+      unsigned_ntxid = @network.get_normalized_txid(rtx)
+      stx = @network.sign_raw_transaction(rtx)
+      signed_ntxid = @network.get_normalized_txid(stx['hex'])
+      assert_equal unsigned_ntxid, signed_ntxid
+
+      txid = nil
+      assert_notifications 'blocknotify' => 1 do
+        txid = @network.send_raw_transaction(stx['hex'])
+        assert txid
+        assert_in_mempool @wallet, txid
+        @network.generate(1)
+      end
+      confirmed_tx = @wallet.get_raw_transaction(txid, true)
+      assert confirmed_tx
+
+      confirmed_ntxid = @wallet.get_normalized_txid(confirmed_tx)
+      assert_equal unsigned_ntxid, confirmed_ntxid
     end
-    confirmed_tx = @wallet.get_raw_transaction(txid, true)
-    assert confirmed_tx
-
-    confirmed_ntxid = @wallet.get_normalized_txid(confirmed_tx)
-    assert_equal unsigned_ntxid, confirmed_ntxid
   end
 end
 

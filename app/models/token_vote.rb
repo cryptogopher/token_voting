@@ -209,6 +209,7 @@ class TokenVote < ActiveRecord::Base
       self.process_tx(token_t, txids)
 
       #puts token_t.prev_sync_height, next_block_height, prev_blockhash
+      #puts incoming_txs['transactions'].inspect
       #puts txids.inspect
 
       ntxids = txids.map { |txid| rpc.get_normalized_txid(rpc.get_raw_transaction(txid)) }
