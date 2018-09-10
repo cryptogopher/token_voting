@@ -127,7 +127,7 @@ module RPC
         else
           tx_fee_per_kb = 0.0001024.to_d
           error_msg =
-            if fee_estimate.has_key?('errors') and not fee_estimate['errors'].empty?
+            if fee_estimate.has_key?('errors') and !fee_estimate['errors'].empty?
               fee_estimate['errors'].join('. ')
             else
               'no messages'

@@ -76,8 +76,9 @@ def create_token_vote(issue=issues(:issue_01), **attributes)
 end
 
 def fund_token_vote(vote, amount=0.0, confs=0)
-  assert_notifications 'blocknotify' => confs do
-    @network.send_to_address(vote.address, amount) if amount > 0.0
+  assert_notifications 'blocknotify' => confs, 'walletnotify' => confs>0 ? 2 : 1 do
+    txid = @network.send_to_address(vote.address, amount) if amount > 0.0
+    assert_in_mempool @wallet, txid
     @network.generate(confs) if confs > 0
   end
   TokenVote.all.reload
@@ -115,10 +116,12 @@ def payout_token_votes(**diffs)
     assert_difference 'TokenWithdrawal.pending.count', -(diffs[:tw_req]) do
       assert_difference 'TokenWithdrawal.processed.count', 0 do
         assert_difference 'TokenWithdrawal.rejected.count', diffs[:tw_rej] do
-          assert_difference 'TokenTransaction.count', diffs[:tt] do
-            assert_difference 'TokenPendingOutflow.count', diffs[:tpo] do
-              post "#{payout_token_votes_path}.js"
-              assert_nil flash[:error]
+          assert_difference 'TokenPayout.count', diffs[:tp] do
+            assert_difference 'TokenTransaction.count', diffs[:tt] do
+              assert_difference 'TokenPendingOutflow.count', diffs[:tpo] do
+                post "#{payout_token_votes_path}.js"
+                assert_nil flash[:error]
+              end
             end
           end
         end
@@ -143,11 +146,11 @@ def sign_and_send_transactions(confs=0, **diffs)
 
   if confs > 0
     diffs.default = 0
-    assert_difference 'TokenTransaction.pending.count', -(diffs[:tt]) do
-      assert_difference 'TokenTransaction.processed.count', diffs[:tt] do
+    assert_difference 'TokenTransaction.pending.count', diffs[:tt_pend] do
+      assert_difference 'TokenTransaction.processed.count', -(diffs[:tt_pend]) do
         assert_difference 'TokenWithdrawal.requested.count', 0 do
-          assert_difference 'TokenWithdrawal.pending.count', -(diffs[:tw]) do
-            assert_difference 'TokenWithdrawal.processed.count', diffs[:tw] do
+          assert_difference 'TokenWithdrawal.pending.count', diffs[:tw_pend] do
+            assert_difference 'TokenWithdrawal.processed.count', -(diffs[:tw_pend]) do
               assert_difference 'TokenWithdrawal.rejected.count', 0 do
                 assert_difference 'TokenPendingOutflow.count', diffs[:tpo] do
                   assert_notifications 'blocknotify' => confs,

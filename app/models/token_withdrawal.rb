@@ -60,7 +60,7 @@ class TokenWithdrawal < ActiveRecord::Base
   end
 
   def requested?
-    not self.is_rejected && self.token_transaction.nil?
+    !self.rejected? && self.token_transaction.blank?
   end
 
   def rejected?
@@ -95,7 +95,7 @@ class TokenWithdrawal < ActiveRecord::Base
                 token_votes.issue_id = token_payouts.issue_id')
         .joins('LEFT OUTER JOIN token_pending_outflows ON 
                 token_votes.id = token_pending_outflows.token_vote_id')
-        .group('token_votes.id')
+        .group('token_votes.id', 'token_payouts.id')
         .select(
           'token_votes.id as id',
           'COALESCE(token_payouts.payee_id, token_votes.voter_id) as user_id',
@@ -107,6 +107,7 @@ class TokenWithdrawal < ActiveRecord::Base
           'token_payouts.amount as payout')
         .having('amount > 0')
         .group_by { |vote| [vote.user_id, vote.token_type_id] }
+      votes.default = []
 
       requested_withdrawals = TokenWithdrawal.requested.order(id: :asc)
       requested_withdrawals.each do |withdrawal|
