@@ -70,6 +70,7 @@ class TokenWithdrawal < ActiveRecord::Base
   def amount_withdrawable
     total = 0.to_d
     TokenWithdrawal.transaction do
+      # TODO: optimize first 3 queries into 1 with joins
       total += self.payee.token_payouts.token(self.token_type).sum(:amount)
       total += self.payee.token_votes.token(self.token_type).expired.sum(:amount_conf)
       total -= self.payee.token_votes.token(self.token_type).expired
