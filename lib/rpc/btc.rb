@@ -116,7 +116,26 @@ module RPC
       tx_size = self.decode_raw_transaction(rtx_est)['size']
 
       # Create correct tx
-      tx_fee = self.estimate_fee(25).to_d * tx_size / 1024
+      node_version = self.get_network_info['version']
+      if node_version < 16_00_00
+        tx_fee_per_kb = self.estimate_fee(25)
+      else
+        fee_estimate = self.estimate_smart_fee(25)
+        if fee_estimate.has_key?('feerate')
+          tx_fee_per_kb = fee_estimate['feerate']
+        else
+          tx_fee_per_kb = 0.0001024.to_d
+          error_msg =
+            if fee_estimate.has_key?('errors') and not fee_estimate['errors'].empty?
+              fee_estimate['errors'].join('. ')
+            else
+              'no messages'
+            end
+          Rails.logger.info "Smart fee estimation failed, falling back to default (%s)." %
+             error_msg
+        end
+      end
+      tx_fee = tx_fee_per_kb.to_d * tx_size / 1024.to_d
       raw_outputs = outputs.map do |address, amount|
         fee_share = (amount - fee_score[address] * tx_fee / total_fee_score).round(precision)
         [address, fee_share.to_s('F')]
