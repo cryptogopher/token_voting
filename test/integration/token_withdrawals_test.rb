@@ -171,13 +171,17 @@ class TokenWithdrawalNotifyTest < TokenVoting::NotificationIntegrationTest
   def test_payout_one_requested_withdrawal_from_expired_vote
     log_user 'alice', 'foo'
     vote1 = create_token_vote
+    vote2 = create_token_vote
     fund_token_vote(vote1, 0.68, @min_conf)
     travel(1.day+1.hour)
-    withdraw_token_votes(amount: 0.33)
+    withdraw_token_votes(address: vote2.address, amount: 0.33)
 
     assert_equal 1, TokenWithdrawal.requested.count
     payout_token_votes(tw_req: -1, tw_rej: 0, tt: 1, tpo: 1)
     sign_and_send_transactions(@min_conf, tw: 1, tt: 1, tpo: -1)
+    [vote1, vote2].map(&:reload)
+    assert_equal 0.35, vote1.amount_conf
+    assert_in_delta 0.33, vote2.amount_conf, 0.0001
   end
 
   def test_payout_one_requested_withdrawal_from_completed_vote
