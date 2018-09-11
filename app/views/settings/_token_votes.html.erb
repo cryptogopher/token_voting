@@ -1,8 +1,3 @@
-<p>
-  <%= label_tag :settings_default_token, 'Default token' %>
-  <%= select_tag 'settings[default_token]',
-    options_for_select(TokenVote.tokens.keys, @settings['default_token']) %>
-</p>
 </div>
 
 <fieldset class="box settings">
@@ -10,61 +5,67 @@
   <%= render partial: 'settings/checkpoints' %>
 </fieldset>
 
-<fieldset class="box tabular settings">
-<legend>BTC</legend>
-  <p>
-    <%= label_tag :settings_btc_rpc_uri, 'RPC URI' %>
-    <%= text_field_tag 'settings[BTC][rpc_uri]', @settings['BTC']['rpc_uri'], size: 64 %>
-    <em class="info">
-      <%= l(:label_default) %>: <%= @plugin.settings[:default]['BTC']['rpc_uri'] %>
-    </em>
-  </p>
-  <p>
-    <%= label_tag :settings_btc_min_conf, 'Minimum confirmations' %>
-    <%= number_field_tag 'settings[BTC][min_conf]', @settings['BTC']['min_conf'],
-      min: 1, size: 2 %>
-    <em class="info">
-      <%= l(:label_default) %>: <%= @plugin.settings[:default]['BTC']['min_conf'] %>
-    </em>
-  </p>
-</fieldset>
+<% if @token_types.any? %>
+  <div class="autoscroll">
+    <table class="list">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>RPC URI</th>
+          <th>Required confirmations</th>
+          <th>Decimal precision</th>
+          <th>Default?</th>
+          <th>Last block height</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @token_types.each do |token_type| %>
+          <tr>
+            <td class="name"><%= token_type.name %></td>
+            <td><%= token_type.rpc_uri %></td>
+            <td><%= token_type.min_conf %></td>
+            <td><%= token_type.precision %></td>
+            <td><%= checked_image token_type.is_default %></td>
+            <td><%= token_type.prev_sync_height %></td>
+            <td><%= link_to(l(:button_delete), token_type_path(token_type), method: :delete,
+                            class: 'icon icon-del') if token_type.deletable? %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% else %>
+  <p class="nodata"><%= l(:label_no_data) %></p>
+<% end %>
 
-<fieldset class="box tabular settings">
-<legend>BCH</legend>
-  <p>
-    <%= label_tag :settings_bch_rpc_uri, 'RPC URI' %>
-    <%= text_field_tag 'settings[BCH][rpc_uri]', @settings['BCH']['rpc_uri'], size: 64 %>
-    <em class="info">
-      <%= l(:label_default) %>: <%= @plugin.settings[:default]['BCH']['rpc_uri'] %>
-    </em>
-  </p>
-  <p>
-    <%= label_tag :settings_bch_min_conf, 'Minimum confirmations' %>
-    <%= number_field_tag 'settings[BCH][min_conf]', @settings['BCH']['min_conf'],
-      min: 1, size: 2 %>
-    <em class="info">
-      <%= l(:label_default) %>: <%= @plugin.settings[:default]['BCH']['min_conf'] %>
-    </em>
-  </p>
-</fieldset>
-
-<fieldset class="box tabular settings">
-<legend>BTC testnet (BTCTEST)</legend>
-  <p>
-    <%= label_tag :settings_btctest_rpc_uri, 'RPC URI' %>
-    <%= text_field_tag 'settings[BTCTEST][rpc_uri]', @settings['BTCTEST']['rpc_uri'],
-      size: 64 %>
-    <em class="info">
-      <%= l(:label_default) %>: <%= @plugin.settings[:default]['BTCTEST']['rpc_uri'] %>
-    </em>
-  </p>
-  <p>
-    <%= label_tag :settings_btctest_min_conf, 'Minimum confirmations' %>
-    <%= number_field_tag 'settings[BTCTEST][min_conf]', @settings['BTCTEST']['min_conf'],
-      min: 1, size: 2 %>
-    <em class="info">
-      <%= l(:label_default) %>: <%= @plugin.settings[:default]['BTCTEST']['min_conf'] %>
-    </em>
-  </p>
-</fieldset>
+<%= form_for @token_type do |f| %>
+  <fieldset class="box tabular settings">
+    <legend>New token type</legend>
+    <p>
+      <%= f.label :name, 'Name' %>
+      <%= f.text_field :name, size: 16 %>
+      <em class="info"><%= l(:label_example) %>BTC</em>
+    </p>
+    <p>
+      <%= f.label :rpc_uri, 'RPC URI' %>
+      <%= f.text_field :rpc_uri, size: 64 %>
+      <em class="info"><%= l(:label_example) %>http://user:password@hostname:8332</em>
+    </p>
+    <p>
+      <%= f.label :min_conf, 'Required confirmations' %>
+      <%= f.number_field :min_conf, min: 1, size: 2 %>
+      <em class="info"><%= l(:label_example) %>6</em>
+    </p>
+    <p>
+      <%= f.label :precision, 'Decimal precision' %>
+      <%= f.number_field :precision, min: 0 %>
+      <em class="info"><%= l(:label_example) %>8</em>
+    </p>
+    <p>
+      <%= f.label :is_default, 'Default?' %>
+      <%= f.check_box :is_default %>
+    </p>
+  </fieldset>
+<% end %>
 

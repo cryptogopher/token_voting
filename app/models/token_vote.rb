@@ -232,7 +232,7 @@ class TokenVote < ActiveRecord::Base
   def set_defaults
     if new_record?
       self.duration ||= 1.month
-      self.token_type ||= TokenType.find_by_default(true) || TokenType.all.first
+      self.token_type ||= TokenType.find_by_is_default(true) || TokenType.all.first
       self.amount_conf ||= 0
       self.amount_unconf ||= 0
       self.is_completed ||= false

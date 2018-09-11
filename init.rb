@@ -31,23 +31,12 @@ Redmine::Plugin.register :token_voting do
   end
 
   settings default: {
-    'default_token' => :BTCTEST,
     'checkpoints' => {
-      'statuses' => [IssueStatus.table_exists? && IssueStatus.all.where(is_closed: true).pluck(:id),],
+      'statuses' => [
+        IssueStatus.table_exists? && IssueStatus.all.where(is_closed: true).pluck(:id),
+      ],
       'shares' => [1.0]
-    },
-    'BTC' => {
-      'rpc_uri' => 'http://user:password@localhost:8332',
-      'min_conf' => 6,
-    },
-    'BCH' => {
-      'rpc_uri' => 'http://user:password@localhost:8332',
-      'min_conf' => 6,
-    },
-    'BTCTEST' => {
-      'rpc_uri' => 'http://user:password@localhost:18332',
-      'min_conf' => 6,
-    },
+    }
   }, partial: 'settings/token_votes'
 end
 
