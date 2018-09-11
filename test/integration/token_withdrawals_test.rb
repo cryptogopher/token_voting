@@ -168,7 +168,7 @@ class TokenWithdrawalNotifyTest < TokenVoting::NotificationIntegrationTest
     assert_response :ok
   end
 
-  def test_payout_one_requested_withdrawal_from_expired_vote
+  def test_payout_partial_from_expired_vote
     log_user 'alice', 'foo'
     vote1 = create_token_vote
     vote2 = create_token_vote
@@ -186,7 +186,7 @@ class TokenWithdrawalNotifyTest < TokenVoting::NotificationIntegrationTest
     assert_in_delta 0.33, vote2.amount_conf, 0.0001
   end
 
-  def test_payout_one_requested_withdrawal_from_completed_vote
+  def test_payout_partial_from_completed_vote
     log_user 'alice', 'foo'
     vote1 = create_token_vote
     vote2 = create_token_vote
@@ -207,6 +207,39 @@ class TokenWithdrawalNotifyTest < TokenVoting::NotificationIntegrationTest
     assert_in_delta 0.302, vote2.amount_conf, 0.0001
     assert_equal 0.854, users(:alice).token_payouts.sum(:amount)
     assert_equal 0.064, users(:bob).token_payouts.sum(:amount)
+  end
+
+  def test_payout_full_from_expired_and_completed_vote
+    log_user 'bob', 'foo'
+    vote1 = create_token_vote(duration: 1.week)
+    vote3 = create_token_vote
+    fund_token_vote(vote1, 2, 2)
+    update_issue_status(@issue1, issue_statuses(:pulled))
+    logout_user
+
+    log_user 'charlie', 'foo'
+    vote2 = create_token_vote(duration: 1.day)
+    fund_token_vote(vote2, 0.14, @min_conf)
+    travel(2.days)
+    update_issue_status(@issue1, issue_statuses(:closed))
+
+    [vote1, vote2, vote3].map(&:reload)
+    assert vote1.completed?
+    assert vote2.expired?
+
+    withdraw_token_votes_should_fail(amount: 0.34000001)
+    withdraw_token_votes(address: vote3.address, amount: 0.34)
+    assert_equal 1, TokenWithdrawal.requested.count
+    payout_token_votes(tw_req: -1, tp: -1, tt: 1, tpo: 2)
+    sign_and_send_transactions(@min_conf, tw_pend: -1, tt_pend: -1, tpo: -2)
+
+    [vote1, vote2, vote3].map(&:reload)
+    assert_equal 1.8, vote1.amount_conf
+    assert_equal 0, vote2.amount_conf
+    assert_in_delta 0.34, vote3.amount_conf, 0.0001
+    assert_equal 1.8, users(:bob).token_payouts.sum(:amount)
+    assert_equal 1, users(:bob).token_payouts.count
+    assert_equal 0, users(:charlie).token_payouts.count
   end
 end
 

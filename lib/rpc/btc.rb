@@ -125,7 +125,7 @@ module RPC
         if fee_estimate.has_key?('feerate')
           tx_fee_per_kb = fee_estimate['feerate']
         else
-          tx_fee_per_kb = 0.0001024.to_d
+          tx_fee_per_kb = 0.00002048.to_d
           error_msg =
             if fee_estimate.has_key?('errors') and !fee_estimate['errors'].empty?
               fee_estimate['errors'].join('. ')
