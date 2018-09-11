@@ -20,7 +20,7 @@
           <%= link_to token_vote.issue.subject, issue_path(token_vote.issue) %>
         </td>
         <td class="status"><%= token_vote.issue.status %></td>
-        <td class="token"><%= token_vote.token %></td>
+        <td class="token"><%= token_vote.token_type.name %></td>
         <td class="address"><%= token_vote.address %></td>
         <td class="expiration"><%= format_date(token_vote.expiration) %></td>
         <td class="amount">

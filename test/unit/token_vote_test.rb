@@ -189,7 +189,7 @@ class TokenVoteTest < ActiveSupport::TestCase
     assert_equal TokenPayout.find_by(payee_id: users(:bob)).amount, 0.2
   end
 
-  def test_multiple_votes_pauoyts
+  def test_multiple_votes_payouts
     issue = issues(:issue_01)
     TokenVote.generate!(issue: issue, amount_conf: 1.0)
     TokenVote.generate!(issue: issue, amount_conf: 0.2)
