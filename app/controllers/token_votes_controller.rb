@@ -18,21 +18,13 @@ class TokenVotesController < ApplicationController
          RPC::Error, TokenVote::Error => e
     flash[:error] = e.message
   ensure
-    respond_to do |format|
-      format.js {
-        @token_votes = @issue.reload.token_votes.select {|tv| tv.visible?}
-      }
-    end
+    @token_votes = @issue.reload.token_votes.select {|tv| tv.visible?}
   end
 
   def destroy
     @token_vote.destroy
 
-    respond_to do |format|
-      format.js {
-        @token_votes = @issue.reload.token_votes.select {|tv| tv.visible?}
-      }
-    end
+    @token_votes = @issue.reload.token_votes.select {|tv| tv.visible?}
   end
 
   def withdraw
@@ -42,11 +34,7 @@ class TokenVotesController < ApplicationController
   rescue ActiveRecord::RecordNotFound, ActiveRecord::RecordInvalid => e
     flash[:error] = e.message
   ensure
-    respond_to do |format|
-      format.js {
-        @token_withdrawals = User.current.reload.token_withdrawals
-      }
-    end
+    @token_withdrawals = User.current.reload.token_withdrawals
   end
 
   def payout
@@ -54,11 +42,7 @@ class TokenVotesController < ApplicationController
   rescue RPC::Error => e
     flash[:error] = e.message
   ensure
-    respond_to do |format|
-      format.js {
-        @token_withdrawals = TokenWithdrawal.all.reload.pending
-      }
-    end
+    @token_withdrawals = TokenWithdrawal.all.reload.pending
   end
 
   # Callback for tx notification, details in token_votes_test.rb
@@ -90,11 +74,7 @@ class TokenVotesController < ApplicationController
     api_message = e.message
     api_status = :bad_request
   ensure
-    respond_to do |format|
-      format.api {
-        render text: (api_message || ''), status: (api_status || :ok), layout: nil
-      }
-    end
+    render text: (api_message || ''), status: (api_status || :ok), layout: nil
   end
 
   def token_vote_params

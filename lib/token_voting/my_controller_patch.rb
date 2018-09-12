@@ -22,9 +22,7 @@ module TokenVoting
           @token_votes[status.to_s] = TokenVote.where(voter: User.current).send(status)
         end
 
-        respond_to do |format|
-          format.html { @token_votes_tabs = MY_TOKEN_VOTES_TABS }
-        end
+        @token_votes_tabs = MY_TOKEN_VOTES_TABS
       end
     end
   end
