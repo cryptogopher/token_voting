@@ -30,4 +30,13 @@ class UiTest < Redmine::IntegrationTest
     get my_token_votes_path
     assert_response :ok
   end
+
+  def test_get_plugin_settings
+    log_user 'alice', 'foo'
+    User.current.admin = true
+    User.current.save!
+
+    get plugin_settings_path('token_voting')
+    assert_response :ok
+  end
 end

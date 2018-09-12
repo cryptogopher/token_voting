@@ -40,29 +40,13 @@ module TokenVoting
         shares.each_with_index do |value, index|
           if value.nil? || value.empty?
             errors << "Checkpoint #{index+1} share is not set"
-          elsif value.to_f < 0.01 || value.to_f > 1.0
+          elsif value.to_d < 0.01 || value.to_d > 1.0
             errors << "Checkpoint #{index+1} has share outside defined range 0.01 - 1.0"
           end
         end
 
-        if shares.reduce(0) { |sum, a| sum += a.to_f } != 1.0
+        if shares.reduce(0) { |sum, a| sum += a.to_d } != 1.0
           errors << "Sum of checkpoint shares has to equal 1.0"
-        end
-
-        # - RPC checks
-        TokenVote.tokens.keys.each do |token|
-          begin
-            uri = params[:settings][token][:rpc_uri]
-            rpc = RPC::get_rpc(token, uri)
-            uri = rpc.uri.to_s
-            rpc.uptime
-
-            if params[:settings][token][:min_conf].to_i < 1
-              errors << "Confirmation threshold for #{token} has to be 1 or more"
-            end
-          rescue RPC::Error, URI::Error => e
-            errors << "Cannot connect to #{token} RPC #{uri}: #{e.message}"
-          end
         end
 
         if errors.present?
