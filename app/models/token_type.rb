@@ -33,7 +33,7 @@ class TokenType < ActiveRecord::Base
     if new_record?
       self.rpc_uri ||= 'http://rpcuser:rpcpassword@hostname:8332'
       self.min_conf ||= 6
-      self.is_default ||= false
+      self.is_default ||= TokenType.find_by(is_default: true).nil? ? true : false
       self.prev_sync_height ||= 0
     end
   end

@@ -19,8 +19,12 @@
             <td><%= token_type.min_conf %></td>
             <td><%= checked_image token_type.is_default %></td>
             <td><%= token_type.prev_sync_height %></td>
-            <td><%= link_to(l(:button_delete), token_type_path(token_type), method: :delete,
-                            class: 'icon icon-del') if token_type.deletable? %></td>
+            <td class="buttons">
+              <%= link_to(l(:button_delete), token_type_path(token_type), method: :delete,
+                          class: 'icon icon-del') if token_type.deletable? %>
+              <%= link_to(l(:button_edit), edit_token_type_path(token_type),
+                          class: 'icon icon-edit') %>
+            </td>
           </tr>
         <% end %>
       </tbody>

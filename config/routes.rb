@@ -15,7 +15,7 @@ get 'token_votes/walletnotify/:token_type_name/:txid', to: 'token_votes#walletno
 get 'token_votes/blocknotify/:token_type_name/:blockhash', to: 'token_votes#blocknotify',
   as: 'blocknotify_token_votes'
 
-resources :token_types, :only => [:new, :create, :destroy]
+resources :token_types, :only => [:new, :create, :edit, :update, :destroy]
 
 get 'my/token_votes', to: 'my#token_votes', as: 'my_token_votes'
 

@@ -20,7 +20,7 @@ module TokenVoting
       end
 
       def token_vote_token_options
-        TokenVote.tokens.keys
+        TokenType.all.pluck(:name, :id)
       end
 
       def token_vote_duration_options

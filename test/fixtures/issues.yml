@@ -1,7 +1,7 @@
 DEFAULTS: &DEFAULTS
   project: project_01
   tracker: bug
-  priority_id: 3
+  priority: normal
   lft: 1
   rgt: 2
 

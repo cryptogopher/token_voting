@@ -4,3 +4,5 @@ project_01:
   homepage: http://tv.michalczyk.pro/
   is_public: true
   identifier: tokenvoting
+  lft: 1
+  rgt: 2

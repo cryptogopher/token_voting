@@ -1,0 +1,27 @@
+<%= error_messages_for @token_type %>
+
+<%= form_for @token_type do |f| %>
+  <fieldset class="box tabular settings">
+    <p>
+      <%= f.label :name, 'Name' %>
+      <%= f.text_field :name, size: 16, required: true %>
+      <em class="info">Must be unique.</em>
+    </p>
+    <p>
+      <%= f.label :rpc_uri, 'RPC URI' %>
+      <%= f.text_field :rpc_uri, size: 64, required: true %>
+      <em class="info">Only accessible URI will be accepted upon save.</em>
+    </p>
+    <p>
+      <%= f.label :min_conf, 'Required confirmations' %>
+      <%= f.number_field :min_conf, min: 1, size: 2 %>
+      <em class="info">Number of confirmations for transaction to be considered immutable. Must be high enough to avoid confirmed transaction change/disappearance due to chain reorganizations. For BTC absolute minimum is 6, while 8 is considered safe value.</em>
+    </p>
+    <p>
+      <%= f.label :is_default, 'Default?' %>
+      <%= f.check_box :is_default %>
+      <em class="info">Should this type be used as default for new vote creation?</em>
+    </p>
+  </fieldset>
+  <%= submit_tag %>
+<% end %>
