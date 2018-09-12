@@ -20,11 +20,6 @@
       <em class="info">At least 1 confirmation required.</em>
     </p>
     <p>
-      <%= f.label :precision, 'Decimal precision' %>
-      <%= f.number_field :precision, min: 0 %>
-      <em class="info">Number of decimal places accepted on fractional amounts.</em>
-    </p>
-    <p>
       <%= f.label :is_default, 'Default?' %>
       <%= f.check_box :is_default %>
       <em class="info">Should this type be used as default for new vote creation?</em>

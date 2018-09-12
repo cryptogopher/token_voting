@@ -6,6 +6,8 @@ module RPC
   class BTC
     attr_reader :uri
 
+    PRECISION = 8
+
     def initialize(service_uri)
       @uri = URI.parse(URI.escape(service_uri))
       unless @uri && @uri.kind_of?(URI::HTTP) && @uri.request_uri
@@ -75,7 +77,6 @@ module RPC
 
       token_t = TokenType.find_by(name: self.class.name.demodulize)
       min_conf = token_t.min_conf
-      precision = token_t.precision
 
       utxos = self.list_unspent(min_conf, 9999999, flat_inputs.keys)
       selected_utxos = []
@@ -138,7 +139,7 @@ module RPC
       end
       tx_fee = tx_fee_per_kb.to_d * tx_size / 1024.to_d
       raw_outputs = outputs.map do |address, amount|
-        fee_share = (amount - fee_score[address] * tx_fee / total_fee_score).round(precision)
+        fee_share = (amount - fee_score[address] * tx_fee / total_fee_score).round(PRECISION)
         [address, fee_share.to_s('F')]
       end
       rtx = self.create_raw_transaction(selected_utxos, raw_outputs.to_h)

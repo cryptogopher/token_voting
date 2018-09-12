@@ -18,8 +18,6 @@ class TokenType < ActiveRecord::Base
     end
   end
   validates :min_conf, numericality: { greater_than: 0 }
-  # FIXME: move precision as constant in RPC classes
-  validates :precision, numericality: { greater_than_or_equal_to: 0 }
   validates :is_default, inclusion: [true, false]
   validates :prev_sync_height, numericality: { greater_than_or_equal_to: 0 }
 
@@ -35,7 +33,6 @@ class TokenType < ActiveRecord::Base
     if new_record?
       self.rpc_uri ||= 'http://rpcuser:rpcpassword@hostname:8332'
       self.min_conf ||= 6
-      self.precision ||= 8
       self.is_default ||= false
       self.prev_sync_height ||= 0
     end

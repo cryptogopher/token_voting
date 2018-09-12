@@ -37,7 +37,7 @@ class TokenTypesController < ApplicationController
   private
 
   def token_type_params
-    params.require(:token_type).permit(:name, :rpc_uri, :min_conf, :precision, :is_default)
+    params.require(:token_type).permit(:name, :rpc_uri, :min_conf, :is_default)
   end
 end
 
