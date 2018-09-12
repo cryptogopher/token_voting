@@ -11,10 +11,10 @@ class TokenType < ActiveRecord::Base
       uri = rpc.uri.to_s
       rpc.uptime
     rescue RPC::ClassMissing => e
-      record.errors.add(:name, e.message)
+      record.errors.add(:name, "does not describe valid RPC class (#{e.message})")
     rescue RPC::Error, URI::Error => e
       record.errors.add(:rpc_uri,
-                        "Cannot connect to #{record.name} RPC \"#{uri}\": #{e.message}")
+                        "is invalid or does not point to reachable RPC daemon (#{e.message})")
     end
   end
   validates :min_conf, numericality: { greater_than: 0 }
