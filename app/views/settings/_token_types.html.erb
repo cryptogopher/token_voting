@@ -1,0 +1,31 @@
+<% if @token_types.any? %>
+  <div class="autoscroll">
+    <table class="list">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th><span>RPC URI</span></th>
+          <th>Confirms</th>
+          <th>Default?</th>
+          <th>Last block #</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @token_types.each do |token_type| %>
+          <tr>
+            <td class="name"><%= token_type.name %></td>
+            <td><%= token_type.rpc_uri %></td>
+            <td><%= token_type.min_conf %></td>
+            <td><%= checked_image token_type.is_default %></td>
+            <td><%= token_type.prev_sync_height %></td>
+            <td><%= link_to(l(:button_delete), token_type_path(token_type), method: :delete,
+                            class: 'icon icon-del') if token_type.deletable? %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% else %>
+  <p class="nodata"><%= l(:label_no_data) %></p>
+<% end %>

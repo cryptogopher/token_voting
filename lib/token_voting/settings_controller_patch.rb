@@ -5,17 +5,22 @@ module TokenVoting
 
       private
 
-      def render_token_voting_settings(params)
-        @plugin = Redmine::Plugin.find(params[:id])
+      def token_voting_settings
+        return unless params[:id] == 'token_voting'
+        if request.post?
+          post_token_voting_settings
+        elsif request.get?
+          get_token_voting_settings
+        end
+      end
+
+      def get_token_voting_settings
         @settings = params[:settings]
-        @partial = @plugin.settings[:partial]
-        render
+        @token_types = TokenType.all
       end
 
       # validate settings on POST, before saving
-      def token_voting_settings
-        return unless request.post? && params[:id] == 'token_voting'
-
+      def post_token_voting_settings
         # Statuses from each multiple-select have appended '' from hidden input
         unsplit = params[:settings][:checkpoints][:statuses][0...-1]
         params[:settings][:checkpoints][:statuses] = unsplit.split('')
@@ -51,10 +56,8 @@ module TokenVoting
 
         if errors.present?
           flash[:error] = errors.join('<br>').html_safe
-          render_token_voting_settings(params)
+          #render_token_voting_settings(params)
         end
-      rescue Redmine::PluginNotFound
-        render_404
       end
     end
   end

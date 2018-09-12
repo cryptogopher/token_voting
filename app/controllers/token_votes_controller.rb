@@ -6,7 +6,7 @@ class TokenVotesController < ApplicationController
   before_filter :authorize_global, only: [:withdraw, :payout]
   accept_api_auth :walletnotify, :blocknotify
 
-  helper IssuesHelper
+  helper :issues
 
   def create
     @token_vote = TokenVote.new(token_vote_params)
