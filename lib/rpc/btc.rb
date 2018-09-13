@@ -159,7 +159,11 @@ module RPC
         jsonrpc: '1.0'
       }.to_json
 
-      response = JSON.parse(post_http_request(post_body))
+      response_body = post_http_request(post_body)
+      unless response_body && response_body.length > 2
+        raise Error, "Empty response from RPC server" 
+      end
+      response = JSON.parse(response_body)
       if response['error']
         case response['error']['code']
         when -5
