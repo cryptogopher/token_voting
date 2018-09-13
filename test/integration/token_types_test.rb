@@ -64,5 +64,9 @@ class IssuesTest < Redmine::IntegrationTest
     end
     assert_nil TokenType.find_by(name: :BTCREG)
   end
+
+  def test_destroy_token_type_referenced_by_token_vote_should_fail
+    # TODO
+  end
 end
 
