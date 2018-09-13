@@ -1,18 +1,12 @@
 <div class="splitcontentleft">
   <fieldset class="box tabular">
     <legend>Payouts from completed issues</legend>
-    <% if @my_payouts.present? %>
-    <% else %>
-      <div class="nodata"><%= l(:label_no_data) %></div>
-    <% end %>
+    <%= render partial: 'my/token_votes/withdrawals/payouts' %>
   </fieldset>
 
   <fieldset class="box tabular">
     <legend>Expired votes</legend>
-    <% if @my_expired_votes.present? %>
-    <% else %>
-      <div class="nodata"><%= l(:label_no_data) %></div>
-    <% end %>
+    <%= render partial: 'my/token_votes/withdrawals/expired' %>
   </fieldset>
 </div>
 
@@ -26,10 +20,7 @@
 
   <fieldset class="box tabular">
     <legend>Withdrawals</legend>
-    <% if @my_withdrawals.present? %>
-    <% else %>
-      <div class="nodata"><%= l(:label_no_data) %></div>
-    <% end %>
+    <%= render partial: 'my/token_votes/withdrawals/withdrawals' %>
   </fieldset>
 </div>
 

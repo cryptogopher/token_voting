@@ -1,0 +1,32 @@
+<% if @my_payouts.present? %>
+  <table class="list odd-even">
+    <thead>
+      <tr>
+        <th class="id">#</th>
+        <th class="subject"><span>Subject</span></th>
+        <th class="token">Token</th>
+        <th class="amount">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @my_payouts.each do |token_payout| %>
+        <tr id="token_payout-<%= token_payout.id %>" class="<%= cycle('odd', 'even') %>">
+          <td class="id">
+            <%= link_to token_payout.issue.id, issue_path(token_payout.issue) %>
+          </td>
+          <td class="subject">
+            <%= link_to token_payout.issue.subject, issue_path(token_payout.issue) %>
+          </td>
+          <td class="token"><%= token_payout.token_type.name %></td>
+          <td class="amount">
+            <%= "#{humanify_amount(token_payout.amount)}" %>
+          </td>
+        </tr>
+      <% end %>
+      <% reset_cycle %>
+    </tbody>
+  </table>
+<% else %>
+  <div class="nodata"><%= l(:label_no_data) %></div>
+<% end %>
+

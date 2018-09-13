@@ -1,9 +1,7 @@
 class TokenVotesController < ApplicationController
-
   before_filter :find_issue, only: [:create]
   before_filter :find_token_vote, only: [:destroy]
   before_filter :authorize, only: [:create, :destroy]
-  before_filter :authorize_global, only: [:withdraw, :payout]
   accept_api_auth :walletnotify, :blocknotify
 
   helper :issues
@@ -23,26 +21,7 @@ class TokenVotesController < ApplicationController
 
   def destroy
     @token_vote.destroy
-
     @token_votes = @issue.reload.token_votes.select {|tv| tv.visible?}
-  end
-
-  def withdraw
-    @token_withdrawal = TokenWithdrawal.new(token_withdrawal_params)
-    @token_withdrawal.payee = User.current
-    @token_withdrawal.save!
-  rescue ActiveRecord::RecordNotFound, ActiveRecord::RecordInvalid => e
-    flash[:error] = e.message
-  ensure
-    @token_withdrawals = User.current.reload.token_withdrawals
-  end
-
-  def payout
-    TokenWithdrawal.process_requested
-  rescue RPC::Error => e
-    flash[:error] = e.message
-  ensure
-    @token_withdrawals = TokenWithdrawal.all.reload.pending
   end
 
   # Callback for tx notification, details in token_votes_test.rb
@@ -79,10 +58,6 @@ class TokenVotesController < ApplicationController
 
   def token_vote_params
     params.require(:token_vote).permit(:token_type_id, :duration)
-  end
-
-  def token_withdrawal_params
-    params.require(:token_withdrawal).permit(:token_type_id, :amount, :address)
   end
 
   # :find_* methods are called before :authorize,

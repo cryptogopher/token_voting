@@ -63,8 +63,32 @@ class TokenWithdrawal < ActiveRecord::Base
     !self.rejected? && self.token_transaction.blank?
   end
 
+  def pending?
+    self.token_transaction.present? && !self.token_transaction.is_processed
+  end
+
+  def processed?
+    self.token_transaction.present? && self.token_transaction.is_processed
+  end
+
   def rejected?
     self.is_rejected
+  end
+
+  def deletable?
+    self.requested? && (self.payee == User.current)
+  end
+
+  def status
+    if self.requested?
+      :requested
+    elsif self.pending?
+      :pending
+    elsif self.processed?
+      :processed
+    else
+      :rejected
+    end
   end
 
   def amount_withdrawable

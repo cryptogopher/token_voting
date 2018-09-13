@@ -1,8 +1,8 @@
 class TokenTypesController < ApplicationController
   layout 'admin'
 
-  before_action :require_admin
-  before_action :find_token_type, only: [:edit, :update, :destroy]
+  before_filter :find_token_type, only: [:edit, :update, :destroy]
+  before_filter :require_admin
 
   def new
     @token_type = TokenType.new
