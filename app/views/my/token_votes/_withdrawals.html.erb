@@ -1,6 +1,18 @@
 <div class="splitcontentleft">
   <fieldset class="box tabular">
-    <legend>Payouts</legend>
+    <legend>Payouts from completed issues</legend>
+    <% if @my_payouts.present? %>
+    <% else %>
+      <div class="nodata"><%= l(:label_no_data) %></div>
+    <% end %>
+  </fieldset>
+
+  <fieldset class="box tabular">
+    <legend>Expired votes</legend>
+    <% if @my_expired_votes.present? %>
+    <% else %>
+      <div class="nodata"><%= l(:label_no_data) %></div>
+    <% end %>
   </fieldset>
 </div>
 
@@ -11,10 +23,13 @@
     <em class="info">(2) withdrawal transactions are processed/signed under human supervision; application does not have access to private keys used for signing</em>
     <em class="info">(3) fees will be deducted from withdrawal amount so the received amount will be slightly lower</em>
   </fieldset>
-</div>
 
-<div class="content" style="clear: both">
   <fieldset class="box tabular">
-    <legend>Expired votes</legend>
+    <legend>Withdrawals</legend>
+    <% if @my_withdrawals.present? %>
+    <% else %>
+      <div class="nodata"><%= l(:label_no_data) %></div>
+    <% end %>
   </fieldset>
 </div>
+

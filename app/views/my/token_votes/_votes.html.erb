@@ -14,7 +14,7 @@
     </thead>
     <tbody>
       <% @my_votes.each do |token_vote| %>
-        <tr id="token_vote-<%= token_vote.id %>">
+        <tr id="token_vote-<%= token_vote.id %>" class="<%= cycle('odd', 'even') %>">
           <td class="id">
             <%= link_to token_vote.issue.id, issue_path(token_vote.issue) %>
           </td>
@@ -41,6 +41,7 @@
           <td colspan="7"><img src="<%= qrcode_data_uri(token_vote.address) %>" /></td>
         </tr>
       <% end %>
+      <% reset_cycle %>
     </tbody>
   </table>
 <% else %>
