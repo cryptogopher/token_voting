@@ -1,0 +1,49 @@
+<% if @my_votes.present? %>
+  <table class="list odd-even">
+    <thead>
+      <tr>
+        <th class="id">#</th>
+        <th class="subject"><span>Subject</span></th>
+        <th class="status">Status</th>
+        <th class="token">Token</th>
+        <th class="amount">Amount (unconf.)</th>
+        <th class="address">Address</th>
+        <th class="expiration">Expiration</th>
+        <th class="actions">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @my_votes.each do |token_vote| %>
+        <tr id="token_vote-<%= token_vote.id %>">
+          <td class="id">
+            <%= link_to token_vote.issue.id, issue_path(token_vote.issue) %>
+          </td>
+          <td class="subject">
+            <%= link_to token_vote.issue.subject, issue_path(token_vote.issue) %>
+          </td>
+          <td class="status"><%= token_vote.status %></td>
+          <td class="token"><%= token_vote.token_type.name %></td>
+          <td class="amount">
+            <%= "#{humanify_amount(token_vote.amount_conf)}" %>
+            <%= "(#{humanify_amount(token_vote.amount_unconf)})" %>
+          </td>
+          <td class="address"><%= token_vote.address %></td>
+          <td class="expiration"><%= format_date(token_vote.expiration) %></td>
+          <td class="buttons">
+            <%= link_to l(:button_delete), token_vote_path(token_vote), method: :delete,
+              remote: true, class: 'icon icon-del' if token_vote.deletable? %>
+            <%= link_to_function 'QR code', "$('#qrcode#{token_vote.id}').toggle()",
+              class: 'icon icon-qrcode' %>
+        </td>
+        </tr>
+
+        <tr id="qrcode<%= token_vote.id %>" style="display: none">
+          <td colspan="7"><img src="<%= qrcode_data_uri(token_vote.address) %>" /></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p class="nodata"><%= l(:label_no_data) %></p>
+<% end %>
+

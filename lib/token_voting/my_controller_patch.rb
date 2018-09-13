@@ -1,30 +1,31 @@
 module TokenVoting
   module MyControllerPatch
     MyController.class_eval do
-      MY_TOKEN_VOTES_TABS = [
-        { name: 'active',
-          partial: 'my/token_votes/index',
-          label: :label_active_votes },
-        { name: 'available',
-          partial: 'my/token_votes/available_tokens',
-          label: :label_available_tokens },
-        { name: 'completed',
-          partial: 'my/token_votes/index',
-          label: :label_completed_votes },
+      MY_USER_TABS = [
+        { name: 'votes',
+          partial: 'my/token_votes/votes',
+          label: :label_my_votes },
         { name: 'withdrawals',
-          partial: 'my/token_votes/index',
-          label: :label_token_withdrawals },
+          partial: 'my/token_votes/withdrawals',
+          label: :label_my_withdrawals },
+      ]
+      MY_ADMIN_TABS = [
+        { name: 'payouts',
+          partial: 'my/token_votes/payouts',
+          label: :label_payouts },
       ]
 
       def token_votes
-        @token_votes = Hash.new([])
-        [:active, :expired, :completed].each do |status|
-          @token_votes[status.to_s] = TokenVote.where(voter: User.current).send(status)
-        end
+        @my_tabs = MY_USER_TABS
+        @my_votes = TokenVote.where(voter: User.current)
+        @my_payouts = TokenPayout.where(payee: User.current)
+        @my_expired_votes = @my_votes.expired
+        @my_withdrawals = TokenWithdrawal.where(payee: User.current)
 
-        @token_votes_tabs = MY_TOKEN_VOTES_TABS
+        if User.current.allowed_to_globally?(:manage_token_votes)
+          @my_tabs += MY_ADMIN_TABS
+        end
       end
     end
   end
 end
-

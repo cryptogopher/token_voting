@@ -73,6 +73,16 @@ class TokenVote < ActiveRecord::Base
     self.expiration <= Time.current && !self.completed?
   end
 
+  def status
+    if self.completed?
+      :completed
+    elsif self.expired?
+      :expired
+    else
+      :active
+    end
+  end
+
   # Updates 'is_completed' after issue edit and computes payouts on completion
   def self.issue_edit_hook(issue, journal)
     detail = journal.details.where(prop_key: 'status_id').pluck(:old_value, :value)

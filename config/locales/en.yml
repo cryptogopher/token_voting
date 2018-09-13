@@ -2,10 +2,9 @@
 en:
   label_token_votes: "Token votes"
   label_your_votes: "Your votes"
-  label_active_votes: "Active votes"
-  label_available_tokens: "Available tokens"
-  label_completed_votes: "Completed votes"
-  label_token_withdrawals: "Token withdrawals"
+  label_my_votes: "My votes"
+  label_my_withdrawals: "My withdrawals"
+  label_payouts: "Payouts"
   activerecord:
     attributes:
       token_vote:
