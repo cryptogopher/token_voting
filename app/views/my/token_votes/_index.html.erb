@@ -3,11 +3,11 @@
     <tr>
       <th class="id">#</th>
       <th class="subject">Subject</th>
-      <th class="token">Status</th>
+      <th class="status">Status</th>
       <th class="token">Token</th>
+      <th class="amount">Amount (unconf.)</th>
       <th class="address">Address</th>
       <th class="expiration">Expiration</th>
-      <th class="amount">Amount (unconf.)</th>
       <th class="actions">Actions</th>
     </tr>
 
@@ -21,12 +21,12 @@
         </td>
         <td class="status"><%= token_vote.issue.status %></td>
         <td class="token"><%= token_vote.token_type.name %></td>
-        <td class="address"><%= token_vote.address %></td>
-        <td class="expiration"><%= format_date(token_vote.expiration) %></td>
         <td class="amount">
           <%= "#{humanify_amount(token_vote.amount_conf)}" %>
           <%= "(#{humanify_amount(token_vote.amount_unconf)})" %>
         </td>
+        <td class="address"><%= token_vote.address %></td>
+        <td class="expiration"><%= format_date(token_vote.expiration) %></td>
         <td class="buttons">
           <%= link_to l(:button_delete), token_vote_path(token_vote), method: :delete,
             remote: true, class: 'icon icon-del' if token_vote.deletable? %>
