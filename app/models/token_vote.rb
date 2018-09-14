@@ -41,6 +41,7 @@ class TokenVote < ActiveRecord::Base
 
   after_initialize :set_defaults
 
+  scope :funded, -> { where("amount_unconf > 0 OR amount_conf > 0") }
   scope :active, -> { where(is_completed: false).where("expiration > ?", Time.current) }
   scope :inactive, -> { where.not(id: active) }
   scope :completed, -> { where(is_completed: true) }
@@ -63,6 +64,10 @@ class TokenVote < ActiveRecord::Base
 
   def deletable?
     self.visible? && !self.funded?
+  end
+
+  def active?
+    !self.completed? && !self.expired?
   end
 
   def completed?

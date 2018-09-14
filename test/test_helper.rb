@@ -106,6 +106,7 @@ def withdraw_token_votes_should_fail(**attributes)
   assert_no_difference 'TokenWithdrawal.count' do
     post "#{token_withdrawals_path}.js", params: {token_withdrawal: attributes}
     refute_nil flash[:error]
+    assert_nil flash[:notice]
   end
   assert_response :ok
 end

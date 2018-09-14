@@ -1,6 +1,6 @@
 require File.expand_path('../../test_helper', __FILE__)
 
-class TokenWithdrawalNotifyTest < TokenVoting::NotificationIntegrationTest
+class TokenWithdrawalsTest < TokenVoting::NotificationIntegrationTest
   fixtures :token_types, :issues, :issue_statuses, :users,
     :projects, :roles, :members, :member_roles, :enabled_modules,
     :trackers, :workflow_transitions
@@ -21,7 +21,7 @@ class TokenWithdrawalNotifyTest < TokenVoting::NotificationIntegrationTest
     logout_user
   end
 
-  def test_withdraw_by_anonymous_should_fail
+  def test_create_by_anonymous_should_fail
     assert User.current.instance_of? AnonymousUser
     assert_no_difference 'TokenWithdrawal.count' do
       post "#{token_withdrawals_path}.js", params: {token_withdrawal: {
@@ -33,13 +33,13 @@ class TokenWithdrawalNotifyTest < TokenVoting::NotificationIntegrationTest
     assert_response :unauthorized
   end
 
-  def test_withdraw_without_votes_should_fail
+  def test_create_without_votes_should_fail
     log_user 'alice', 'foo'
     assert @issue1.token_votes.empty?
     withdraw_token_votes_should_fail(amount: 0.00000001)
   end
 
-  def test_withdraw_from_not_expired_not_completed_not_funded_vote_should_fail
+  def test_create_from_not_expired_not_completed_not_funded_vote_should_fail
     log_user 'alice', 'foo'
     vote1 = create_token_vote
 
@@ -49,7 +49,7 @@ class TokenWithdrawalNotifyTest < TokenVoting::NotificationIntegrationTest
     withdraw_token_votes_should_fail(amount: 0.00000001)
   end
 
-  def test_withdraw_from_not_expired_not_completed_funded_vote_should_fail
+  def test_create_from_not_expired_not_completed_funded_vote_should_fail
     log_user 'alice', 'foo'
     vote1 = create_token_vote
     fund_token_vote(vote1, 0.5, @min_conf)
@@ -61,7 +61,7 @@ class TokenWithdrawalNotifyTest < TokenVoting::NotificationIntegrationTest
     withdraw_token_votes_should_fail(amount: 0.00000001)
   end
 
-  def test_withdraw_from_expired_not_funded_vote_should_fail
+  def test_create_from_expired_not_funded_vote_should_fail
     log_user 'alice', 'foo'
     vote1 = create_token_vote
     travel(1.day+1.minute)
@@ -72,7 +72,7 @@ class TokenWithdrawalNotifyTest < TokenVoting::NotificationIntegrationTest
     withdraw_token_votes_should_fail(amount: 0.00000001)
   end
 
-  def test_withdraw_from_expired_funded_vote_only_up_to_amount
+  def test_create_from_expired_funded_vote_only_up_to_amount
     log_user 'alice', 'foo'
     vote1 = create_token_vote
     fund_token_vote(vote1, 0.5, @min_conf)
@@ -85,7 +85,7 @@ class TokenWithdrawalNotifyTest < TokenVoting::NotificationIntegrationTest
     withdraw_token_votes(amount: 0.5)
   end
 
-  def test_withdraw_from_completed_not_funded_vote_should_fail
+  def test_create_from_completed_not_funded_vote_should_fail
     log_user 'alice', 'foo'
     vote1 = create_token_vote
     update_issue_status(@issue1, issue_statuses(:closed))
@@ -96,7 +96,7 @@ class TokenWithdrawalNotifyTest < TokenVoting::NotificationIntegrationTest
     withdraw_token_votes_should_fail(amount: 0.00000001)
   end
 
-  def test_withdraw_from_completed_funded_vote_only_up_to_share_amount
+  def test_create_from_completed_funded_vote_only_up_to_share_amount
     log_user 'alice', 'foo'
     vote1 = create_token_vote
     fund_token_vote(vote1, 0.37, @min_conf)
@@ -113,7 +113,7 @@ class TokenWithdrawalNotifyTest < TokenVoting::NotificationIntegrationTest
     withdraw_token_votes(amount: 0.111)
   end
 
-  def test_withdraw_multiple_withdrawals_from_mixed_votes_only_up_to_total_amount
+  def test_create_multiple_withdrawals_from_mixed_votes_only_up_to_total_amount
     log_user 'alice', 'foo'
     vote1 = create_token_vote(duration: 1.week)
     fund_token_vote(vote1, 0.75, 1)
