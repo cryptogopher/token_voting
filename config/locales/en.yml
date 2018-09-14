@@ -3,6 +3,7 @@ en:
   label_token_votes: "Token votes"
   label_your_votes: "Your votes"
   label_my_votes: "My votes"
+  label_my_tokens: "My tokens"
   label_my_withdrawals: "My withdrawals"
   label_payouts: "Payouts"
   activerecord:
