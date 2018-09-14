@@ -1,0 +1,3 @@
+$('#token_transactions-flash').html('<%= j(render_flash_messages) %>');
+<% flash.discard %>
+$('#token_transactions-table').html('<%= j(render :partial => 'my/token_votes/payouts') %>');

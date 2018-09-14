@@ -1,4 +1,4 @@
-class TokenWithdrawalController < ApplicationController
+class TokenWithdrawalsController < ApplicationController
   before_filter :find_token_withdrawal, only: [:destroy]
   before_filter :authorize_global
 
@@ -8,6 +8,8 @@ class TokenWithdrawalController < ApplicationController
     @token_withdrawal.save!
   rescue ActiveRecord::RecordNotFound, ActiveRecord::RecordInvalid => e
     flash[:error] = e.message
+  else
+    flash[:notice] = "Withdrawal request has been created"
   ensure
     @token_withdrawals = User.current.reload.token_withdrawals
   end
@@ -21,6 +23,8 @@ class TokenWithdrawalController < ApplicationController
     TokenWithdrawal.process_requested
   rescue RPC::Error => e
     flash[:error] = e.message
+  else
+    flash[:notice] = "Requested withdrawals have been processed succesfully"
   ensure
     @token_withdrawals = TokenWithdrawal.all.reload.pending
   end

@@ -24,7 +24,7 @@ class TokenWithdrawalNotifyTest < TokenVoting::NotificationIntegrationTest
   def test_withdraw_by_anonymous_should_fail
     assert User.current.instance_of? AnonymousUser
     assert_no_difference 'TokenWithdrawal.count' do
-      post "#{withdraw_token_votes_path}.js", params: {token_withdrawal: {
+      post "#{token_withdrawals_path}.js", params: {token_withdrawal: {
         token_type_id: token_types(:BTCREG),
         amount: 0.00000001,
         address: @network.get_new_address 
@@ -140,7 +140,7 @@ class TokenWithdrawalNotifyTest < TokenVoting::NotificationIntegrationTest
   def test_payout_by_anonymous_should_fail
     assert User.current.instance_of? AnonymousUser
     assert_no_difference 'TokenTransaction.count' do
-      post "#{payout_token_votes_path}.js"
+      post "#{payout_token_withdrawals_path}.js"
     end
     assert_response :unauthorized
   end
@@ -152,7 +152,7 @@ class TokenWithdrawalNotifyTest < TokenVoting::NotificationIntegrationTest
 
     log_user 'alice', 'foo'
     assert_no_difference 'TokenTransaction.count' do
-      post "#{payout_token_votes_path}.js"
+      post "#{payout_token_withdrawals_path}.js"
     end
     assert_response :forbidden
   end
@@ -162,7 +162,7 @@ class TokenWithdrawalNotifyTest < TokenVoting::NotificationIntegrationTest
     assert_equal 0, TokenWithdrawal.requested.count
     assert_no_difference 'TokenTransaction.count' do
       assert_no_difference 'TokenWithdrawal.pending.count' do
-        post "#{payout_token_votes_path}.js"
+        post "#{payout_token_withdrawals_path}.js"
       end
     end
     assert_response :ok
