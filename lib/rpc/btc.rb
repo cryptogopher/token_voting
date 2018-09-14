@@ -57,6 +57,10 @@ module RPC
       {}
     end
 
+    def is_address_valid?(address)
+      self.validate_address(address)['isvalid']
+    end
+
     # Creates rawtransaction. inputs is a hash of hashes:
     # {output_addr1: {input_addr1: amount1, input_addr2: amount2}, output_addr2: {...}, ...}
     # (list of input amounts per output is necessary fo fair fee calculation)

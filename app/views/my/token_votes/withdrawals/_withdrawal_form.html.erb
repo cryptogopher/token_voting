@@ -1,0 +1,16 @@
+<%= form_for @token_withdrawal, remote: true,
+  url: token_withdrawals_path(@issue) do |f| %>
+
+  <p>
+  <%= f.label :amount, 'Withdraw' %>
+  <%= f.number_field :amount, required: true, size: 12, step: amount_precision,
+    placeholder: 'amount' %>
+  <%= f.select :token_type_id, token_vote_token_options %>
+  </p>
+  <p>
+  <%= f.label :amount, 'To address' %>
+  <%= f.text_field :address, required: true, size: 32, placeholder: 'address' %>
+  </p>
+
+  <p><%= submit_tag l(:button_activate) %></p>
+<% end %>

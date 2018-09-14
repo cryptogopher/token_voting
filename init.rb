@@ -7,6 +7,7 @@ ActionDispatch::Reloader.to_prepare do
   IssuesHelper.include TokenVoting::IssuesHelperPatch
 
   MyController.include TokenVoting::MyControllerPatch
+  MyHelper.include TokenVoting::MyHelperPatch
 
   SettingsController.include TokenVoting::SettingsControllerPatch
   SettingsHelper.include TokenVoting::SettingsHelperPatch

@@ -1,3 +1,5 @@
 $('#token_withdrawals-flash').html('<%= j(render_flash_messages) %>');
 <% flash.discard %>
-$('#token_withdrawals-table').html('<%= j(render :partial => 'my/token_votes/withdrawals') %>');
+$('#token_withdrawals-table').html(
+  '<%= j(render :partial => 'my/token_votes/withdrawals/withdrawals') %>'
+);

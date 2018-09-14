@@ -2,6 +2,8 @@ class TokenWithdrawalsController < ApplicationController
   before_filter :find_token_withdrawal, only: [:destroy]
   before_filter :authorize_global
 
+  helper :issues
+
   def create
     @token_withdrawal = TokenWithdrawal.new(token_withdrawal_params)
     @token_withdrawal.payee = User.current
@@ -11,12 +13,14 @@ class TokenWithdrawalsController < ApplicationController
   else
     flash[:notice] = "Withdrawal request has been created"
   ensure
-    @token_withdrawals = User.current.reload.token_withdrawals
+    @my_withdrawals = User.current.reload.token_withdrawals
   end
 
   def destroy
-    @token_type.destroy
-    @token_withdrawals = User.current.reload.token_withdrawals
+    if @token_withdrawal.destroy
+      flash[:notice] = "Withdrawal request has been deleted"
+    end
+    @my_withdrawals = User.current.reload.token_withdrawals
   end
 
   def payout

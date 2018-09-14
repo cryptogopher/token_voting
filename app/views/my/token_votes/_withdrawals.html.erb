@@ -1,5 +1,23 @@
 <div class="splitcontentleft">
   <fieldset class="box tabular">
+    <legend>Request withdrawal</legend>
+    <div id="token_withdrawals-flash"></div>
+    <%= render partial: 'my/token_votes/withdrawals/withdrawal_form' %>
+    <em class="info">(1) if you will withdraw less than total amount, application will decide which funds to use first</em>
+    <em class="info">(2) withdrawal transactions are processed/signed under human supervision; application does not have access to private keys used for signing</em>
+    <em class="info">(3) fees will be deducted from withdrawal amount so the received amount will be slightly lower</em>
+  </fieldset>
+
+  <fieldset class="box tabular">
+    <legend>Withdrawals</legend>
+    <div id="token_withdrawals-table">
+      <%= render partial: 'my/token_votes/withdrawals/withdrawals' %>
+    </div>
+  </fieldset>
+</div>
+
+<div class="splitcontentright">
+  <fieldset class="box tabular">
     <legend>Payouts from completed issues</legend>
     <%= render partial: 'my/token_votes/withdrawals/payouts' %>
   </fieldset>
@@ -9,18 +27,3 @@
     <%= render partial: 'my/token_votes/withdrawals/expired' %>
   </fieldset>
 </div>
-
-<div class="splitcontentright">
-  <fieldset class="box tabular">
-    <legend>Request withdrawal</legend>
-    <em class="info">(1) if you will withdraw less than total amount, application will decide which funds to use first</em>
-    <em class="info">(2) withdrawal transactions are processed/signed under human supervision; application does not have access to private keys used for signing</em>
-    <em class="info">(3) fees will be deducted from withdrawal amount so the received amount will be slightly lower</em>
-  </fieldset>
-
-  <fieldset class="box tabular">
-    <legend>Withdrawals</legend>
-    <%= render partial: 'my/token_votes/withdrawals/withdrawals' %>
-  </fieldset>
-</div>
-

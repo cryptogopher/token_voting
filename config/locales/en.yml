@@ -10,3 +10,7 @@ en:
       token_vote:
         address: 'Address'
 
+  field_amount: 'Amount'
+  field_address: 'Address'
+  field_token_type: 'Token'
+

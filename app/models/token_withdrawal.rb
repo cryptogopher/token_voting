@@ -36,9 +36,20 @@ class TokenWithdrawal < ActiveRecord::Base
   validates :payee, :token_type, presence: true, associated: true
   validates :token_transaction, associated: true
   validates :amount, numericality: { greater_than: 0 }
-  validates :amount, numericality:
-    { less_than_or_equal_to: :amount_withdrawable, if: :requested? }
+  validates :amount, numericality: { 
+    less_than_or_equal_to: :amount_withdrawable,
+    if: :requested?,
+  }
   validates :address, presence: true
+  validates_each :address do |record, attr, value|
+    begin
+      unless RPC::get_rpc(record.token_type).is_address_valid?(value)
+        record.errors.add(:address, "is invalid or has unsupported format")
+      end
+    rescue Error => e
+      record.errors.add(:address, "cannot be validated due to error (#{e.message})")
+    end
+  end
   validates :is_rejected, inclusion: [true, false]
 
   after_initialize :set_defaults
@@ -215,6 +226,7 @@ class TokenWithdrawal < ActiveRecord::Base
 
   def set_defaults
     if new_record?
+      self.token_type ||= TokenType.find_by_is_default(true) || TokenType.all.first
       self.is_rejected ||= false
     end
   end
