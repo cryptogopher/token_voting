@@ -227,7 +227,9 @@ class TokenVote < ActiveRecord::Base
       #puts incoming_txs['transactions'].inspect
       #puts txids.inspect
 
-      ntxids = txids.map { |txid| rpc.get_normalized_txid(rpc.get_raw_transaction(txid)) }
+      ntxids = txids.map do |txid|
+        rpc.get_normalized_txid(rpc.get_transaction(txid, true)['hex'])
+      end
       tt_ids = TokenTransaction.pending.includes(:token_withdrawals)
         .where(ntxid: ntxids, token_withdrawals: {token_type: token_t})
         .references(:token_withdrawals).pluck(:id)

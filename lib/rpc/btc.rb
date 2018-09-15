@@ -17,23 +17,25 @@ module RPC
 
     # Gets tuple of [[inputs], [outputs]] addresses for txid.
     def get_tx_addresses(txid)
-      tx = self.get_raw_transaction(txid, true)
-      input_vouts = []
-      tx['vin'].each do |vin|
+      tx = self.decode_raw_transaction(self.get_transaction(txid, true)['hex'])
+
+      out_addresses = []
+      tx['vout'].map { |vout| out_addresses.concat(vout['scriptPubKey']['addresses']) }
+
+      in_addresses = []
+      tx['vin'].map { |vin| [vin['txid'], vin['vout']] }.each do |txid, voutn|
         begin
-          input_vouts << self.get_raw_transaction(vin['txid'], true)['vout'][vin['vout']]
+          in_tx = self.decode_raw_transaction(self.get_transaction(txid, true)['hex'])
+          in_addresses.concat(in_tx['vout'][voutn]['scriptPubKey']['addresses'])
         rescue RPC::InvalidAddressOrKey
-          # getrawtransaction does not provide rawtx for txs not affecting wallet if
-          # txindex is disabled. This is not a problem as we're only interested in
-          # wallet transactions here.
+          # gettransaction does not provide tx details for txs not affecting wallet (if
+          # -txindex is disabled). This is not a problem as we're only interested in
+          # wallet transactions here: vins that are not affecting wallet can be
+          # safely ignored.
         end
       end
-      [input_vouts, tx['vout']].map do |vouts|
-        vouts.map! do |vout|
-          vout['scriptPubKey']['addresses']
-        end
-        vouts.flatten
-      end
+
+      [in_addresses.uniq, out_addresses.uniq]
     end
 
     # Normalized transaction ID computation loosely based on

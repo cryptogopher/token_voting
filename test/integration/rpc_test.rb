@@ -35,7 +35,7 @@ class TokenVotesNotifyTest < TokenVoting::NotificationIntegrationTest
     assert_includes outputs, address
 
     net_inputs, net_outputs = @network.get_tx_addresses(txid)
-    assert_operator net_inputs.to_set, :<=, inputs.to_set
+    assert_operator (net_inputs+inputs).uniq.to_set, :==, net_inputs.to_set
     assert_operator net_outputs.to_set, :==, outputs.to_set
   end
 
