@@ -11,6 +11,10 @@ class TokenTransaction < ActiveRecord::Base
   scope :pending, -> { where(is_processed: false) }
   scope :processed, -> { where(is_processed: true) }
 
+  def processed?
+    self.is_processed
+  end
+
   protected
 
   def set_defaults

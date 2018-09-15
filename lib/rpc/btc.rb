@@ -63,7 +63,7 @@ module RPC
       self.validate_address(address)['isvalid']
     end
 
-    # Creates rawtransaction. inputs is a hash of hashes:
+    # Creates rawtransaction. inputs is a hash of hashes (amounts are BigDecimal):
     # {output_addr1: {input_addr1: amount1, input_addr2: amount2}, output_addr2: {...}, ...}
     # (list of input amounts per output is necessary fo fair fee calculation)
     # outputs is a hash:
@@ -91,8 +91,9 @@ module RPC
       utxos.each do |utxo|
         address = utxo['address']
         if utxo['solvable'] && (flat_inputs[address] > 0)
-          amount = [utxo['amount'], flat_inputs[address]].min
-          change = utxo['amount'] - amount
+          utxo_amount = utxo['amount'].to_d
+          amount = [utxo_amount, flat_inputs[address]].min
+          change = utxo_amount - amount
           flat_inputs[address] -= amount
           if change > 0
             fee_output_score[address] += 1 if outputs[address] == 0

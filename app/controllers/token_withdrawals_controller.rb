@@ -30,7 +30,8 @@ class TokenWithdrawalsController < ApplicationController
   else
     flash[:notice] = "Requested withdrawals have been processed succesfully"
   ensure
-    @token_withdrawals = TokenWithdrawal.all.reload.pending
+    @transactions = TokenTransaction.all.reload
+    redirect_to my_token_votes_path(params: {tab: 'transactions'})
   end
 
   private

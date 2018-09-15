@@ -89,4 +89,16 @@ class MyTest < TokenVoting::NotificationIntegrationTest
     get my_token_votes_path
     assert_response :ok
   end
+
+  def test_token_votes_with_payout
+    log_user 'alice', 'foo'
+    vote1 = create_token_vote
+    fund_token_vote(vote1, 0.092, @min_conf)
+    travel(1.day+1.hour)
+    withdraw_token_votes(address: @network.get_new_address, amount: 0.033)
+    payout_token_votes(tw_req: -1, tt: 1, tpo: 1)
+
+    get my_token_votes_path
+    assert_response :ok
+  end
 end

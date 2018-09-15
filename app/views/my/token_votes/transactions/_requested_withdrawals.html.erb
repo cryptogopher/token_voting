@@ -1,0 +1,27 @@
+<% if @requested_withdrawals.present? %>
+  <table class="list odd-even">
+    <thead>
+      <tr>
+        <th class="payee">Payee</th>
+        <th class="token">Token</th>
+        <th class="amount">Amount</th>
+        <th class="address">Address</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @requested_withdrawals.each do |withdrawal| %>
+        <tr id="token_vote-<%= withdrawal.id %>" class="<%= cycle('odd', 'even') %>">
+          <td class="status"><%= withdrawal.payee.name %></td>
+          <td class="token"><%= withdrawal.token_type.name %></td>
+          <td class="amount">
+            <%= "#{humanify_amount(withdrawal.amount)}" %>
+          </td>
+          <td class="address"><%= withdrawal.address %></td>
+        </tr>
+      <% end %>
+      <% reset_cycle %>
+    </tbody>
+  </table>
+<% else %>
+  <div class="nodata"><%= l(:label_no_data) %></div>
+<% end %>

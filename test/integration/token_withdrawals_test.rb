@@ -165,7 +165,7 @@ class TokenWithdrawalsTest < TokenVoting::NotificationIntegrationTest
         post "#{payout_token_withdrawals_path}.js"
       end
     end
-    assert_response :ok
+    assert_redirected_to my_token_votes_path(params: {tab: 'transactions'})
   end
 
   def test_payout_partial_from_expired_vote

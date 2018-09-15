@@ -1,0 +1,22 @@
+<div style="clear:both;">
+  <div id="token_transactions-flash"></div>
+</div>
+
+<div class="splitcontentleft">
+  <fieldset class="box tabular">
+    <%= form_for :token_withdrawal, url: payout_token_withdrawals_path do |f| %>
+      <p><%= submit_tag "Process requested withdrawals" %></p>
+    <% end %>
+  </fieldset>
+</div>
+
+<div class="splitcontentright">
+  <%= render partial: 'my/token_votes/transactions/requested_withdrawals' %>
+</div>
+
+<div style="clear:both;">
+  <h3>Transactions</h3>
+  <div id="token_transactions-table">
+    <%= render partial: 'my/token_votes/transactions/index' %>
+  </div>
+</div>

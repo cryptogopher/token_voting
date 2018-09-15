@@ -1,0 +1,42 @@
+<% if @transactions.present? %>
+  <table class="list odd-even">
+    <thead>
+      <tr>
+        <th class="token">Token</th>
+        <th class="createdat">Created at</th>
+        <th class="processed">Processed?</th>
+        <th class="ntxid">Normalized TXID</th>
+        <th class="actions">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @transactions.each do |transaction| %>
+        <tr id="token_vote-<%= transaction.id %>" class="<%= cycle('odd', 'even') %>">
+          <td><%= transaction.token_withdrawals.first.token_type.name %></td>
+          <td><%= format_time(transaction.created_at) %></td>
+          <td><%= checked_image transaction.processed? %></td>
+          <td><%= transaction.ntxid %></td>
+          <td class="buttons">
+            <%= link_to_function 'Show raw TX', "$('#raw-#{transaction.id}').toggle()",
+              class: 'icon icon-package' %>
+            <%= link_to_function 'Decode', "$('#decoded-#{transaction.id}').toggle()",
+              class: 'icon icon-package' %>
+          </td>
+        </tr>
+        <tr id="raw-<%= transaction.id %>" style="display: none">
+          <td colspan="6">
+            <div style="word-break: break-all; text-align: left"><%= transaction.tx %></div>
+          </td>
+        </tr>
+        <tr id="decoded-<%= transaction.id %>" style="display: none">
+          <td colspan="6">
+            <pre style="text-align: left"><%= decode_tx(transaction) %></pre>
+          </td>
+        </tr>
+      <% end %>
+      <% reset_cycle %>
+    </tbody>
+  </table>
+<% else %>
+  <div class="nodata"><%= l(:label_no_data) %></div>
+<% end %>

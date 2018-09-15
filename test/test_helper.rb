@@ -106,7 +106,7 @@ def withdraw_token_votes_should_fail(**attributes)
   assert_no_difference 'TokenWithdrawal.count' do
     post "#{token_withdrawals_path}.js", params: {token_withdrawal: attributes}
     refute_nil flash[:error]
-    assert_nil flash[:notice]
+    #assert_nil flash[:notice]
   end
   assert_response :ok
 end
@@ -120,7 +120,7 @@ def payout_token_votes(**diffs)
           assert_difference 'TokenPayout.count', diffs[:tp] do
             assert_difference 'TokenTransaction.count', diffs[:tt] do
               assert_difference 'TokenPendingOutflow.count', diffs[:tpo] do
-                post "#{payout_token_withdrawals_path}.js"
+                post payout_token_withdrawals_path
                 assert_nil flash[:error]
                 refute_nil flash[:notice]
               end
@@ -130,7 +130,7 @@ def payout_token_votes(**diffs)
       end
     end
   end
-  assert_response :ok
+  assert_redirected_to my_token_votes_path(params: {tab: 'transactions'})
 end
 
 def sign_and_send_transactions(confs=0, **diffs)
