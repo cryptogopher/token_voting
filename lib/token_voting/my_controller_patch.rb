@@ -22,7 +22,7 @@ module TokenVoting
         @my_tabs = MY_USER_TABS
 
         # My votes
-        @my_votes = TokenVote.where(voter: User.current)
+        @my_votes = TokenVote.where(voter: User.current).includes(:token_type, :issue, :voter)
 
         # My tokens
         @my_expired_votes = @my_votes.expired.funded
