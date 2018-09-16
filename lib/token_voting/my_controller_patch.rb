@@ -25,17 +25,18 @@ module TokenVoting
         @my_votes = TokenVote.where(voter: User.current).includes(:token_type, :issue, :voter)
 
         # My tokens
-        @my_expired_votes = @my_votes.expired.funded
         @my_payouts = TokenPayout.where(payee: User.current)
+        @my_expired_votes = @my_votes.expired.funded.includes(:token_type, :issue)
 
         # My withdrawals
         @my_withdrawals = TokenWithdrawal.where(payee: User.current)
+          .includes(:token_type, :token_transaction)
         @token_withdrawal = TokenWithdrawal.new
 
         if User.current.allowed_to_globally?(:manage_token_votes)
           @my_tabs += MY_ADMIN_TABS
-          @requested_withdrawals = TokenWithdrawal.requested
-          @transactions = TokenTransaction.all
+          @requested_withdrawals = TokenWithdrawal.requested.includes(:token_type, :payee)
+          @transactions = TokenTransaction.all.includes(:token_withdrawals)
         end
       end
     end
