@@ -27,7 +27,7 @@ You may try and find this plugin working on other versions too, but be prepared 
 There is smaller chance that other version will work out of the box than in Redmine/RoR case. At least bitcoind RPC seems to evolve fast right now. Feature requests are welcome.
 Necessary configuration will be provided later in this guide.
 
-2. Change to redmine user, clone plugin to your plugins directory, install gemfiles and migrate database:
+2. Login to shell, change to redmine user, clone plugin to your plugins directory, install gemfiles and migrate database:
    ```
    su - redmine
    git -C /var/lib/redmine/plugins/ clone https://github.com/cryptogopher/token_voting.git
@@ -38,8 +38,15 @@ Necessary configuration will be provided later in this guide.
 
 3. Restart Redmine. Exact steps depend on your installation of Redmine. You may need to restart Apache (when using Passenger) or just Redmine daemon/service.
 
+4. Update Redmine settings.
+* enable REST web service (Administration -> Settings -> Enable REST web service)
+* create separate Redmine user (login e.g. `rpc`) for RPC daemon to use (Administration -> Users -> New user)
+* login as user `rpc`, reset API access key and copy it for next steps (My account -> API access key -> Reset, then Show)
+* re-login as administrator and grant token votes permissions to roles (Administration -> Roles and permissions -> Permissions report). There are 2 types of permissions:
+
+
 4. Setup RPC daemon. 
-4. Setup plugin settings. Go to https://your.redmine.com/settings/plugin/token_voting (or Redmine -> Administration -> Plugins -> Token voting plugin -> Configure)
+4. Setup plugin settings. Go to: Administration -> Plugins -> Token voting plugin -> Configure (https://your.redmine.com/settings/plugin/token_voting)
 * Add at least 1 token type. Best to start with BTCTEST.
 
 5. Enable _Manage token votes_ permissions (https://your.redmine.com/roles/permissions)
