@@ -65,3 +65,12 @@ Necessary configuration will be provided later in this guide.
    * if nothing else helps - open _support_ issue on issue tracker (link at the top).
 
 8. Have fun!
+
+## Troubleshooting
+
+_Yet to come._
+
+## Contributing
+
+_Yet to come._
+
