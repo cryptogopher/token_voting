@@ -46,9 +46,15 @@ Necessary configuration will be provided later in this guide.
   * _Add token votes_ - should be granted to everybody who needs to cast votes
   * _Manage token votes_ - administrative permission granted for roles responsible for creating and signing transactions containing payouts
 
-5. Setup RPC daemon. 
+5. Setup RPC daemon. This step depends on token type that you want to use.
+* BTCTEST is a great choice for start
+  * install _bitcoind_ if not already installed
+  * copy _bitcoin.conf_ from plugin directory: _token_voting/lib/configs/BTCTEST/bitcoin.conf_ to location supported by your _bitcoind_
+  * fill fields marked by _<>_ inside copied configuration file with information specific to your installation
+  * restart _bitcoind_
+Information regarding BTC will be provided after plugin will receive some testing from users. Specifically when using mainnet it is of crucial importance to __never leave private key on RPC daemon (use watch-only wallet)__. All transaction signing must take place outside of plugin and is not supported by design to not create easy to steal hot wallets.
 
-6. Update plugin settings. Go to: Administration -> Plugins -> Token voting plugin -> Configure (https://your.redmine.com/settings/plugin/token_voting)
+6. Update plugin settings. (Administration -> Plugins -> Token voting plugin -> Configure)
 * Add at least 1 token type. Best to start with BTCTEST.
 
 7. Go to Redmine, create/open issue, add token vote and transfer some funds to it. Refresh view and observe if unconfirmed amount changed from 0. If yes - you're done. Otherwise:
