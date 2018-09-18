@@ -53,10 +53,11 @@ Necessary configuration will be provided later in this guide.
      * fill fields marked by _<>_ inside copied configuration file with information specific to your installation
      * restart _bitcoind_
 
-   Information regarding BTC will be provided after plugin will receive some testing from users. Specifically when using mainnet it is of crucial importance to __never leave private key on RPC daemon (use watch-only wallet)__. All transaction signing must take place outside of plugin and is not supported by design to not create easy to steal hot wallets.
+   Information regarding BTC will be provided after plugin will receive some testing from users. Specifically when using mainnet it is of crucial importance to __never leave private key on RPC daemon (use watch-only wallet)__. All transaction signing must take place outside of plugin and is not supported by design to discourage creating easy to steal hot wallets.
 
 6. Update plugin settings. (Administration -> Plugins -> Token voting plugin -> Configure)
-   * Add at least 1 token type. Best to start with BTCTEST.
+   * Add at least 1 token type (New token type). Best to start with BTCTEST. RPC URI should match RPC daemon set up in previous steps.
+   * Configure checkpoints. For start you can leave 1 checkpoint with statuses corresponding to succesfully closed issue and share equal 1.
 
 7. Go to Redmine, create/open issue, add token vote and transfer some funds to it. Refresh view and observe if unconfirmed amount changed from 0. If yes - you're done. Otherwise:
    * double check if installation steps were executed properly
