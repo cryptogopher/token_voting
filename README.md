@@ -39,14 +39,21 @@ Necessary configuration will be provided later in this guide.
 3. Restart Redmine. Exact steps depend on your installation of Redmine. You may need to restart Apache (when using Passenger) or just Redmine daemon/service.
 
 4. Update Redmine settings.
-* enable REST web service (Administration -> Settings -> Enable REST web service)
+* enable REST web service (Administration -> Settings -> API -> Enable REST web service)
 * create separate Redmine user (login e.g. `rpc`) for RPC daemon to use (Administration -> Users -> New user)
 * login as user `rpc`, reset API access key and copy it for next steps (My account -> API access key -> Reset, then Show)
 * re-login as administrator and grant token votes permissions to roles (Administration -> Roles and permissions -> Permissions report). Token votes permissions are inside _Issue tracking_ group. There are 2 types of permissions:
-  * _Add token votes_ - should be granted to everybody who need to cast votes
-  * _Manage token votes_ - administrative permission granted for roles responsible for creating and signing transactions with payouts
+  * _Add token votes_ - should be granted to everybody who needs to cast votes
+  * _Manage token votes_ - administrative permission granted for roles responsible for creating and signing transactions containing payouts
 
 5. Setup RPC daemon. 
 
 6. Update plugin settings. Go to: Administration -> Plugins -> Token voting plugin -> Configure (https://your.redmine.com/settings/plugin/token_voting)
 * Add at least 1 token type. Best to start with BTCTEST.
+
+7. Go to Redmine, create/open issue, add token vote and transfer some funds to it. Refresh view and observe if unconfirmed amount changed from 0. If yes - you're done. Otherwise:
+* double check if installation steps were executed properly
+* refer to Troubleshooting section to look for known problems
+* if nothing else helps - open _support_ issue on issue tracker (link at the top).
+
+8. Have fun!
