@@ -9,22 +9,22 @@ Issue tracker: https://tv.michalczyk.pro/ (don't be afraid, you can register/log
 1. Check prerequisites. To use this plugin you need to have:
 * Redmine (https://www.redmine.org) installed. Check that your Redmine/Rails/Ruby version is compatible with plugin. Currently supported are following versions of software:
 
-|        |versions |
-|--------|---------|
-|Redmine |3.4.x    |
-|Ruby    |2.3.x    |
-|Rails   |4.2.x    |
+  |        |versions |
+  |--------|---------|
+  |Redmine |3.4.x    |
+  |Ruby    |2.3.x    |
+  |Rails   |4.2.x    |
 
-You may try and find this plugin working on other versions too, but be prepared to get error messages. In case it works let everyone know that through issue tracker (send _support_ issue). If it doesn't work, you are welcome to send _feature_ request to make plugin compatible with other version. Keep in mind though, that for more exotic versions there will be more vote power needed to complete such feature request.
+  You may try and find this plugin working on other versions too, but be prepared to get error messages. In case it works let everyone know that through issue tracker (send _support_ issue). If it doesn't work, you are welcome to send _feature_ request to make plugin compatible with other version. Keep in mind though, that for more exotic versions there will be more vote power needed to complete such feature request.
 
 * RPC server for the token type that you are willing to use (e.g. bitcoind). Right now following tokens/versions are supported:
 
-|token                        |versions               |
-|-----------------------------|-----------------------|
-|BTC (bitcoind, mainnet)      |0.15.1, 0.16.0         |
-|BTCTEST (bitcoind, testnet)  |0.15.1, 0.16.0         |
+  |token                        |versions               |
+  |-----------------------------|-----------------------|
+  |BTC (bitcoind, mainnet)      |0.15.1, 0.16.0         |
+  |BTCTEST (bitcoind, testnet)  |0.15.1, 0.16.0         |
 
-There is smaller chance that other version will work out of the box than in Redmine/RoR case. At least bitcoind RPC seems to evolve fast right now. Feature requests are welcome.
+  There is smaller chance that other version will work out of the box than in Redmine/RoR case. At least bitcoind RPC seems to evolve fast right now. Feature requests are welcome.
 Necessary configuration will be provided later in this guide.
 
 2. Login to shell, change to redmine user, clone plugin to your plugins directory, install gemfiles and migrate database:
@@ -42,12 +42,11 @@ Necessary configuration will be provided later in this guide.
 * enable REST web service (Administration -> Settings -> Enable REST web service)
 * create separate Redmine user (login e.g. `rpc`) for RPC daemon to use (Administration -> Users -> New user)
 * login as user `rpc`, reset API access key and copy it for next steps (My account -> API access key -> Reset, then Show)
-* re-login as administrator and grant token votes permissions to roles (Administration -> Roles and permissions -> Permissions report). There are 2 types of permissions:
+* re-login as administrator and grant token votes permissions to roles (Administration -> Roles and permissions -> Permissions report). Token votes permissions are inside _Issue tracking_ group. There are 2 types of permissions:
+  * _Add token votes_ - should be granted to everybody who need to cast votes
+  * _Manage token votes_ - administrative permission granted for roles responsible for creating and signing transactions with payouts
 
+5. Setup RPC daemon. 
 
-4. Setup RPC daemon. 
-4. Setup plugin settings. Go to: Administration -> Plugins -> Token voting plugin -> Configure (https://your.redmine.com/settings/plugin/token_voting)
+6. Update plugin settings. Go to: Administration -> Plugins -> Token voting plugin -> Configure (https://your.redmine.com/settings/plugin/token_voting)
 * Add at least 1 token type. Best to start with BTCTEST.
-
-5. Enable _Manage token votes_ permissions (https://your.redmine.com/roles/permissions)
-   - it is under _Issue tracking_
