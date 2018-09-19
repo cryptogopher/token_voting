@@ -6,6 +6,18 @@ Issue tracker: https://tv.michalczyk.pro/ (don't be afraid, you can register/log
 
 Screenshots: https://tv.michalczyk.pro/projects/token-voting/wiki/Screenshots
 
+## Motivation
+
+In a world where increasingly more of what is possible and impossible is defined by a software we use (and yes, you can treat _cost prohibitive_ as _impossible_ as well), we need a software that will solve our problems. Instead of being limited to solving problems that the software at hand can solve.
+
+To drive the software creation towards fulfilling our needs, there has to be environment of engineers and users coupled by a feedback loop. One that will incentivise both sides to produce desired products. Best if this environment could build software on a _cost per effort_ basis instead of anachronistic and ineffective _cost per user/usage period/license_ models.
+
+This Redmine plugin is an attempt to provide tool necessary to create and maintain such environment.
+
+## Purpose
+
+Of course there can be more than one way of taking advantage of such voting system, than efficiently producing free and open source software. You can find it valuable wherever you want to allow the public to manage some limited resource on a _most demanded - first served_ basis. Don't let anyone hold back your imagination! And let me know what _token voting_ enabled you to achieve!
+
 ## Installation
 
 1. Check prerequisites. To use this plugin you need to have:
