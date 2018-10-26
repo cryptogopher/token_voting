@@ -1,4 +1,4 @@
-# token-voting
+# token_voting
 
 Redmine plugin: vote for Redmine issue resolution with crypto token deposits.
 
