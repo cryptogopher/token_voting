@@ -2,9 +2,9 @@
 
 Redmine plugin: vote for Redmine issue resolution with crypto token deposits.
 
-Issue tracker: https://tv.michalczyk.pro/ (don't be afraid, you can register/login there with your __Github account__).
+Issue tracker: https://it.michalczyk.pro/ (don't be afraid, you can register/login there with your __Github account__).
 
-Screenshots: https://tv.michalczyk.pro/projects/token-voting/wiki/Screenshots
+Screenshots: https://it.michalczyk.pro/projects/token-voting/wiki/Screenshots
 
 ## Motivation
 
