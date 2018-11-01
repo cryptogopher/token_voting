@@ -14,19 +14,19 @@ To drive the software creation towards fulfilling our needs, there has to be env
 
 This Redmine plugin is an attempt to provide tool necessary to create and maintain such environment.
 
-## Purpose
-
-Of course there can be more than one way of taking advantage of such voting system, than efficiently producing free and open source software. You can find it valuable wherever you want to allow the public to manage some limited resource on a _most demanded - first served_ basis. Don't let anyone hold back your imagination! And let me know what _token voting_ enabled you to achieve!
-
-## Advantages
+### Advantages
 
 Proposed solution has following advantages:
-* allows to **avoid placing the cost of creating feature/fixing bug on single entity**. Many times cost (in terms of money, but also time required to go through the process) for the single entity can significantly exceed potential profits. Thus such solution may be economically unjustified. This solution **allows to distribute cost between many interested entities**. Some of the most wanted features have tens of proponents. Just 10 of enities willing to support particular feature/bugfix make entry barrier one order of magnitute smaller.
+* allows to **avoid placing the cost of creating feature/fixing bug on single entity**. Many times cost (in terms of money, but also time required to go through the process) for the single entity can significantly exceed potential profits. Thus it may be economically unjustified. This solution **allows to distribute cost between many interested entities**. Some of the most wanted features have tens of proponents. Just 10 of enities willing to support particular feature/bugfix make entry barrier one order of magnitute smaller.
 * allows to avoid situation where particular **needs of single entities that could finance development of some features may not overlap with the needs of wide community**. There is significant risk, that code built exclusively by them will not be accepted by project developers. That in turn will encourage entities to keep their code for themselves or make it available as a hard to maintain patches.
 * besides providing financial incentive, **voting with tokens will provide information regarding popularity** of particular feature/bug. This way developers can both optimize for most frequently wanted features/bugfixes and avoid implementing those least requested. 
 * **freedom of choice of what to implement and what not is retained** in the hands of developers. All votes on unimplemented features go back to voter sooner or later.
 * most of the development **work can be done by competent people**, already knowing project internals best.
 * last but not least it introduces some **gamification** elements into development process. Writing code may not only be rewarding, but also fun.
+
+## Purpose
+
+Of course there can be more than one way of taking advantage of such voting system, than efficiently producing free and open source software. You can find it valuable wherever you want to allow the public to manage some limited resource on a _most demanded - first served_ basis. Don't let anyone hold back your imagination! And let me know what _token voting_ enabled you to achieve!
 
 ## Installation
 
