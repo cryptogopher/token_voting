@@ -20,7 +20,7 @@ Redmine::Plugin.register :token_voting do
   author 'cryptogopher'
   description 'Vote for Redmine issue resolution with crypto tokens'
   version '0.0.1'
-  url 'https://github.com/cryptogopher/token-voting'
+  url 'https://github.com/cryptogopher/token_voting'
   author_url 'https://github.com/cryptogopher'
 
   menu :account_menu, :token_votes, { controller: 'my', action: 'token_votes' },

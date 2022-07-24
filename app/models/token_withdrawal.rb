@@ -10,8 +10,8 @@
 # merger of multiple withdrawals for the same token (incl. different users) in one tx.
 # - loss of information regarding withdrawals (e.g. token_withdrawals table corruption or
 # deletion) must not incur double withdrawals.
-# - fees are deduced from withdrawal amount to enable withdrawal of all
-# accounts. Plugin is not meant to be used as wallet, so control of exact output
+# - fees are deduced from withdrawal amount to enable withdrawal of all available
+# amount. Plugin is not meant to be used as wallet, so control of exact output
 # amount is not required.
 #
 # Withdrawal statuses:

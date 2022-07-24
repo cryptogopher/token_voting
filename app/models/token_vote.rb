@@ -34,10 +34,10 @@ class TokenVote < ActiveRecord::Base
   #enum status: [:requested, :unconfirmed, :confirmed, :resolved, :expired, :refunded]
 
   validates :voter, :issue, :token_type, presence: true, associated: true
-  validates :duration, inclusion: { in: DURATIONS.values }
+  validates :duration, inclusion: {in: DURATIONS.values}
   validates :expiration, :address, presence: true
   validates :address, presence: true, uniqueness: true
-  validates :amount_conf, :amount_unconf, numericality: { grater_than_or_equal_to: 0 }
+  validates :amount_conf, :amount_unconf, numericality: {grater_than_or_equal_to: 0}
 
   after_initialize :set_defaults
 
